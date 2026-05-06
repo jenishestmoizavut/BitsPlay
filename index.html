@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#f7f8fb" />
   <title>BitsPlay</title>
 <link rel="icon" type="image/png" href="BitsPlay.png" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="BitsPlay.png" />
   <style>
     :root {
       --bg: #f7f8fb;
@@ -1911,8 +1913,14 @@ const analytics = getAnalytics(app); // <-- INITIALIZE IT HERE
     renderPuzzle();
     initFirebase();
   </script>
+<script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker registered!'))
+          .catch(err => console.warn('Service Worker failed.', err));
+      });
+    }
+  </script>
 </body>
-</html>
-
-
-
+</html>	
