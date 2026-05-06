@@ -23,11 +23,3 @@ Currently featuring the flagship game: **ReWorded**.
 * **Authentication:** Firebase Auth (Google Sign-In)
 * **Analytics:** Firebase Analytics
 * **Hosting:** GitHub Pages
-
-## 🚀 Running Locally
-
-Because this project uses ES6 Modules and fetches external assets, it must be run through a local web server (opening the `.html` file directly in your browser will cause CORS errors).
-
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/yourusername/bitsplay.git](https://github.com/yourusername/bitsplay.git)
