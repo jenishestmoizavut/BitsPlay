@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bitsplay-v1';
+const CACHE_NAME = 'bitsplay-v2'; // Increment version to force update
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,29 +7,22 @@ const ASSETS_TO_CACHE = [
   './ReWorded.png'
 ];
 
-// Install the Service Worker and cache the files
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE))
+  );
+  self.skipWaiting();
+});
+
+// Network-first strategy: Try the web, fallback to cache
 self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // If the network works, update the cache and return the response
         const resClone = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, resClone);
-        });
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
         return response;
       })
-      .catch(() => caches.match(event.request)) // If network fails, use cache
-  );
-});
-
-// Serve cached files when offline or on weak networks
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Return the cached version if found, otherwise fetch from the network
-        return response || fetch(event.request);
-      })
+      .catch(() => caches.match(event.request))
   );
 });
