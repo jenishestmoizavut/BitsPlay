@@ -1189,8 +1189,9 @@
     }
 
     function currentPlayerId() {
-      return user?.uid || "guest";
-    }
+  return user?.uid || localStorage.getItem("guest_uid") || "guest";
+}
+
 
     function currentSessionKey() {
       return `${currentPlayerId()}::${puzzle?.id || todayISO}`;
@@ -1219,6 +1220,13 @@
     }
 
     function loadState() {
+		try {
+    // Add this: Generate a unique ID for guests if one doesn't exist
+    if (!localStorage.getItem("guest_uid")) {
+      localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));
+    }
+    
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
       try {
         const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
         return {
@@ -1412,7 +1420,14 @@
       document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
       document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
       if (viewId === "letterView") startTimer();
+		if (viewId === "hubView" || viewId === "letterView") {
+    await Promise.all([
+      loadCloudLeaderboard(),
+      loadCloudComments()
+    ]);
+    renderPuzzle(); 
     }
+	}
 
     function renderPuzzle() {
       ensureCurrentPuzzle();
