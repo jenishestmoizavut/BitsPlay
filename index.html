@@ -1188,9 +1188,11 @@
       return `${year}-${month}-${day}`;
     }
 
+    
     function currentPlayerId() {
+  // Use a persistent guest ID from localStorage if not signed in
   return user?.uid || localStorage.getItem("guest_uid") || "guest";
-}
+	}
 
 
     function currentSessionKey() {
@@ -1219,29 +1221,29 @@
       return Object.values(FIREBASE_CONFIG).every(Boolean);
     }
 
-    function loadState() {
-		try {
-    // Add this: Generate a unique ID for guests if one doesn't exist
+
+function loadState() {
+  try {
+    // Generate a unique ID for guests once and store it forever
     if (!localStorage.getItem("guest_uid")) {
       localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));
     }
     
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        return {
-          user: null,
-          results: parsed.results || {},
-          leaderboard: parsed.leaderboard || {},
-          comments: parsed.comments || {},
-          current: parsed.current || { puzzleId: "", clues: [], elapsed: 0, finished: false },
-          currents: parsed.currents || {},
-          profileName: parsed.profileName || "Guest Player"
-        };
-      } catch {
-        return { user: null, results: {}, leaderboard: {}, comments: {}, current: { puzzleId: "", clues: [], elapsed: 0, finished: false }, currents: {}, profileName: "Guest Player" };
-      }
-    }
+    return {
+      user: null,
+      results: parsed.results || {},
+      leaderboard: parsed.leaderboard || {},
+      comments: parsed.comments || {},
+      current: parsed.current || { puzzleId: "", clues: [], elapsed: 0, finished: false },
+      currents: parsed.currents || {},
+      profileName: parsed.profileName || "Guest Player"
+    };
+  } catch {
+    return { user: null, results: {}, leaderboard: {}, comments: {}, current: { puzzleId: "", clues: [], elapsed: 0, finished: false }, currents: {}, profileName: "Guest Player" };
+  }
+}
+
 
     function saveState() {
       appState.currents = appState.currents || {};
@@ -1416,18 +1418,27 @@
       saveState();
     }
 
-    function setView(viewId) {
-      document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
-      document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
-      if (viewId === "letterView") startTimer();
-		if (viewId === "hubView" || viewId === "letterView") {
-    await Promise.all([
-      loadCloudLeaderboard(),
-      loadCloudComments()
-    ]);
-    renderPuzzle(); 
+    
+	  async function setView(viewId) {
+  document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
+  document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
+  
+  if (viewId === "letterView") startTimer();
+
+  // If viewing the Hub or Game, pull fresh data from Firebase
+  if (viewId === "hubView" || viewId === "letterView") {
+    try {
+      await Promise.all([
+        loadCloudLeaderboard(),
+        loadCloudComments()
+      ]);
+      renderPuzzle(); 
+    } catch (e) {
+      console.warn("Silent refresh failed", e);
     }
-	}
+  }
+}
+
 
     function renderPuzzle() {
       ensureCurrentPuzzle();
