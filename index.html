@@ -1,0 +1,1918 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7f8fb" />
+  <title>BitsPlay</title>
+<link rel="icon" type="image/png" href="../BitsPlay.png" />
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --panel-soft: #f1f5f9;
+      --line: #dfe5ee;
+      --text: #111827;
+      --soft: #526174;
+      --muted: #7b8797;
+      --accent: #2563eb;
+      --accent-soft: #e9f1ff;
+      --good: #16803c;
+      --good-soft: #e8f7ee;
+      --warn: #a15c07;
+      --warn-soft: #fff3dc;
+      --bad: #b42318;
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.09);
+      --radius: 8px;
+    }
+
+    body.dark {
+      --bg: #0b1020;
+      --panel: #11182a;
+      --panel-soft: #172033;
+      --line: #273349;
+      --text: #edf2f8;
+      --soft: #bec9d8;
+      --muted: #91a0b4;
+      --accent: #60a5fa;
+      --accent-soft: #132944;
+      --good: #5ee08a;
+      --good-soft: #123420;
+      --warn: #f7bd59;
+      --warn-soft: #38280e;
+      --bad: #ff8f87;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button, input { font: inherit; }
+    button {
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+    button:disabled { cursor: default; opacity: 0.55; }
+
+    .shell {
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 18px 0 36px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 0 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius);
+      display: grid;
+      place-items: center;
+      background: var(--accent);
+      color: white;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .brand h1 {
+      font-size: 1.05rem;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    .brand p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    a.btn { text-decoration: none; }
+
+    .btn {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: var(--panel-soft);
+      color: var(--soft);
+      border: 1px solid var(--line);
+      font-weight: 650;
+      font-size: 0.86rem;
+      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); border-color: var(--accent); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn.good { background: var(--good); border-color: var(--good); color: white; }
+    .btn.icon { width: 38px; padding: 0; }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 14px 0;
+      overflow-x: auto;
+    }
+
+    .tab {
+      min-width: max-content;
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: transparent;
+      color: var(--soft);
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-color: color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+
+    .view { display: none; }
+    .view.active { display: block; animation: fadeUp 0.22s ease-out both; }
+
+    .hub-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(270px, 0.8fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .hero {
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: clamp(1.3rem, 2.4vw, 1.8rem);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      max-width: 680px;
+      margin: 0;
+      color: var(--soft);
+      line-height: 1.45;
+      font-size: 0.92rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hero-meta .pill {
+      padding: 5px 9px;
+      font-size: 0.76rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    .side-panel, .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .side-panel { padding: 16px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-title h2, .section-title h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .small { color: var(--muted); font-size: 0.8rem; }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .game-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 170px;
+      transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+
+    .game-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius);
+      display: grid;
+      place-items: center;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 850;
+    }
+
+    .game-card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .game-card p {
+      margin: -6px 0 auto;
+      color: var(--soft);
+      line-height: 1.45;
+      font-size: 0.88rem;
+    }
+
+    .locked {
+      opacity: 0.68;
+      filter: grayscale(0.3);
+    }
+
+    .stat-list, .leader-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stat-row, .leader-row {
+      min-height: 44px;
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 10px;
+    }
+
+    .leader-person {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .rank {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--panel);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: var(--soft);
+      font-size: 0.78rem;
+      flex: 0 0 auto;
+    }
+
+    .leader-name {
+      font-weight: 750;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .time {
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .play-area {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .game-header {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .game-header h2 {
+      margin: 0 0 5px;
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      letter-spacing: 0;
+    }
+
+    .game-header p {
+      margin: 0;
+      color: var(--soft);
+      max-width: 680px;
+      line-height: 1.45;
+    }
+
+    .game-tools {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .timer-box {
+      min-width: 94px;
+      text-align: right;
+      font-size: 1.45rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 850;
+      color: var(--accent);
+    }
+
+    .letters-board {
+      padding: 18px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      background: var(--panel-soft);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .letter-tile {
+      width: 54px;
+      aspect-ratio: 1;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 1.65rem;
+      font-weight: 850;
+      transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+      flex: 0 0 auto;
+    }
+
+    .letter-tile.revealed {
+      background: var(--good-soft);
+      color: var(--good);
+      transform: translateY(-1px);
+    }
+
+    .clues {
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .clue-row {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) 180px;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .clue-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--panel-soft);
+      display: grid;
+      place-items: center;
+      color: var(--soft);
+      font-weight: 800;
+      font-size: 0.82rem;
+    }
+
+    .clue-row.solved {
+      border-color: color-mix(in srgb, var(--good) 34%, var(--line));
+      background: var(--good-soft);
+    }
+
+    .clue-text {
+      color: var(--text);
+      line-height: 1.42;
+      font-size: 0.94rem;
+    }
+
+    .answer-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      min-height: 38px;
+      padding: 8px 10px;
+      background: var(--panel);
+      color: var(--text);
+      outline: 0;
+    }
+
+    .answer-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+
+    .final-answer {
+      border-top: 1px solid var(--line);
+      padding: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      background: var(--panel);
+    }
+
+    .final-answer input {
+      width: 100%;
+      min-height: 44px;
+      padding: 9px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      outline: 0;
+      background: var(--panel-soft);
+      color: var(--text);
+      font-size: 1rem;
+      text-transform: uppercase;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+
+    .message {
+      grid-column: 1 / -1;
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .message.good { color: var(--good); font-weight: 750; }
+    .message.bad { color: var(--bad); font-weight: 750; }
+
+    .drawer {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .postgame-panel {
+      display: none;
+    }
+
+    .postgame-panel.visible {
+      display: block;
+      animation: fadeUp 0.22s ease-out both;
+    }
+
+    .comment-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .comment-textarea {
+      width: 100%;
+      min-height: 104px;
+      resize: vertical;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      color: var(--text);
+      padding: 12px;
+      outline: 0;
+      line-height: 1.45;
+    }
+
+    .comment-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+
+    .comment-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .comment-status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .comment-status.good {
+      color: var(--good);
+      font-weight: 700;
+    }
+
+    .comment-status.bad {
+      color: var(--bad);
+      font-weight: 700;
+    }
+
+    .comment-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .comment-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+      padding: 10px 12px;
+    }
+
+    .comment-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    .comment-body {
+      white-space: pre-wrap;
+      line-height: 1.45;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .mobile-subhead {
+      display: none;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 2px;
+    }
+
+    .leaderboard-locked {
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+
+    .progress-meter {
+      height: 8px;
+      background: var(--panel-soft);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.2s ease;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      color: var(--soft);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .hint-box {
+      background: var(--warn-soft);
+      color: var(--warn);
+      border: 1px solid color-mix(in srgb, var(--warn) 20%, transparent);
+      border-radius: var(--radius);
+      padding: 10px;
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.48);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(440px, 100%);
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .modal h2 { margin: 0 0 8px; }
+    .modal p { color: var(--soft); line-height: 1.5; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+/* --- BITSPLAY JUICE --- */
+    @keyframes popReveal {
+      0% { transform: scale(0.5) translateY(10px); opacity: 0; }
+      50% { transform: scale(1.1) translateY(-2px); }
+      100% { transform: scale(1) translateY(-1px); opacity: 1; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); border-color: var(--bad); }
+      40%, 80% { transform: translateX(5px); border-color: var(--bad); }
+    }
+
+    .letter-tile.revealed {
+      background: var(--good-soft);
+      color: var(--good);
+      /* This makes the letters literally "pop" into place when solved */
+      animation: popReveal 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    .shake {
+      animation: shake 0.4s ease-in-out;
+    }
+
+    /* Make the clue rows transition their colors smoothly */
+    .clue-row {
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    @media (max-width: 880px) {
+      .hub-layout, .game-layout { grid-template-columns: 1fr; }
+      .game-grid { grid-template-columns: 1fr; }
+      .hero { min-height: 0; }
+      .drawer { grid-row: auto; }
+      .play-area { order: 2; }
+      .drawer { order: 1; }
+      .postgame-panel.visible { order: 3; }
+    }
+
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 16px, 1180px); padding-top: 8px; padding-bottom: 22px; }
+      .topbar { align-items: flex-start; gap: 10px; }
+      .top-actions { width: 100%; justify-content: flex-start; }
+      .tabs { padding: 10px 0 12px; gap: 6px; }
+      .tab { padding: 8px 12px; }
+      .hero { padding: 16px; min-height: 0; }
+      .hero h2 { font-size: clamp(1.2rem, 6vw, 1.55rem); line-height: 1.1; }
+      .game-header { flex-direction: column; padding: 16px; }
+      .game-header h2 { font-size: 2rem; }
+      .game-tools { justify-content: space-between; width: 100%; }
+      .timer-box { text-align: left; font-size: 1.8rem; }
+      .letters-board { padding: 14px 12px; gap: 6px; }
+      .letter-tile { width: 44px; font-size: 1.25rem; }
+      .clues { padding: 12px; gap: 8px; }
+      .clue-row { grid-template-columns: 28px minmax(0, 1fr); padding: 10px; }
+      .clue-row input { grid-column: 1 / -1; min-height: 42px; font-size: 1rem; }
+      .clue-text { font-size: 0.92rem; }
+      .final-answer {
+        grid-template-columns: 1fr auto;
+        position: sticky;
+        bottom: 0;
+        z-index: 6;
+        background: color-mix(in srgb, var(--panel) 92%, transparent);
+        backdrop-filter: blur(12px);
+        padding: 12px;
+      }
+      .final-answer input { min-height: 48px; font-size: 1rem; }
+      .final-answer .btn { width: auto; min-width: 92px; min-height: 48px; }
+      .side-panel { padding: 14px; }
+      .mobile-subhead { display: block; }
+      .comment-actions { align-items: stretch; }
+      .comment-actions .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+       <img src="../BitsPlay.png" alt="BitsPlay Logo" class="brand-mark" style="background: transparent; object-fit: contain; padding: 2px;">
+        <div>
+          <h1>BitsPlay</h1>
+          <p>Daily single-player puzzle games.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a class="btn" href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" rel="noopener" title="Contact" aria-label="Contact Jenish">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 5.5h16v13H4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="m4.8 6.2 7.2 6 7.2-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Contact
+        </a>
+        <button class="btn icon" id="themeBtn" type="button" title="Toggle theme" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3v2.2M12 18.8V21M4.8 4.8l1.55 1.55M17.65 17.65l1.55 1.55M3 12h2.2M18.8 12H21M4.8 19.2l1.55-1.55M17.65 6.35l1.55-1.55" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="3.6" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+        <button class="btn" id="authBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.4 0 24 0 14.7 0 6.6 5.3 2.6 13.1l8 6.2C12.5 13.7 17.8 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M47 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.9c-.6 3-2.2 5.5-4.8 7.2l7.7 6C44.4 38 47 31.8 47 24.5z"/>
+            <path fill="#FBBC05" d="M10.6 28.6A14.4 14.4 0 0 1 10.6 19.4l-8-6.2A24 24 0 0 0 2.6 34.8l8-6.2z"/>
+            <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.2 1.4-4.9 2.3-8.2 2.3-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.7 14.7 48 24 48z"/>
+          </svg>
+          <span id="authLabel">Sign in</span>
+        </button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Main views">
+      <button class="tab active" type="button" data-view="hubView">Today</button>
+      <button class="tab" type="button" data-view="letterView">ReWorded</button>
+      <button class="tab" type="button" data-view="profileView">Profile</button>
+    </nav>
+
+    <section class="view active" id="hubView">
+      <div class="hub-layout">
+        <section>
+          <div class="hero">
+            <h2>Today&apos;s puzzle is ready.</h2>
+            <p>Play ReWorded: solve five clues, reveal five letters, and enter the final word whenever you know it.</p>
+            <div class="hero-meta">
+              <span class="pill">ReWorded</span>
+              <span class="pill">5 clues</span>
+              <span class="pill">1 word</span>
+            </div>
+            <div class="hero-actions">
+              <button class="btn primary" type="button" data-start-game>Play today</button>
+              <button class="btn" type="button" data-view-jump="profileView">View profile</button>
+            </div>
+          </div>
+
+          <div class="game-grid" aria-label="Games">
+            <article class="game-card">
+              <div class="game-icon">RW</div>
+              <h3>ReWorded</h3>
+              <p>Five answer-derived letters; find the missing word!</p>
+              <button class="btn primary" type="button" data-start-game>Play</button>
+            </article>
+            <article class="game-card locked">
+              <div class="game-icon">#</div>
+              <h3>Number Run</h3>
+              <p>A future facts-and-patterns daily built around quick mental math.</p>
+              <button class="btn" type="button" disabled>Coming soon</button>
+            </article>
+            <article class="game-card locked">
+              <div class="game-icon">?</div>
+              <h3>Culture Snap</h3>
+              <p>A future pop-culture grid with one-minute recall rounds.</p>
+              <button class="btn" type="button" disabled>Coming soon</button>
+            </article>
+          </div>
+        </section>
+<aside class="side-panel">
+  <div class="section-title">
+    <h3>Cloud Save</h3>
+    <span class="small" id="firebaseStatus">Offline</span>
+  </div>
+  <p class="small" id="authDesc" style="line-height:1.55;margin:0 0 12px">Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.</p>
+  <button class="btn primary" id="profileAuthBtn" type="button">Sign in with Google</button>
+</aside>
+      </div>
+    </section>
+
+    <section class="view" id="letterView">
+      <div class="game-layout">
+        <section class="play-area">
+          <div class="game-header">
+            <div>
+              <h2>ReWorded</h2>
+              <p>Each clue asks for a letter from a hidden answer. Solve the clue answer to reveal that letter, then unscramble all five letters into the final word.</p>
+            </div>
+            <div class="game-tools">
+              <button class="btn" id="hintBtn" type="button">Hint</button>
+              <div class="timer-box" id="timer">00:00</div>
+            </div>
+          </div>
+
+          <div class="letters-board" id="lettersBoard" aria-label="Revealed letters"></div>
+          <div class="clues" id="clues"></div>
+
+          <form class="final-answer" id="finalForm">
+            <input id="finalInput" autocomplete="off" maxlength="5" placeholder="Final word" aria-label="Final word" />
+            <button class="btn good" type="submit">Submit</button>
+            <div class="message" id="gameMessage"></div>
+          </form>
+        </section>
+
+        <aside class="drawer">
+          <section class="side-panel">
+            <div class="section-title">
+              <h3>Progress</h3>
+              <span class="small" id="progressText">0/5</span>
+            </div>
+            <div class="progress-meter"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="pill-row" style="margin-top:12px">
+              <span class="pill" id="streakPill">Streak 0</span>
+              <span class="pill" id="bestPill">Best --</span>
+            </div>
+          </section>
+
+          <section class="side-panel" id="gameLeaderboardPanel">
+            <div class="section-title">
+              <h3>Leaderboard</h3>
+              <span class="small" id="leaderboardDate"></span>
+            </div>
+            <div class="leaderboard-locked" id="leaderboardLocked">Finish the puzzle to unlock today&apos;s board.</div>
+            <div class="leader-list" id="gameLeaderboard"></div>
+          </section>
+
+          <section class="hint-box">
+            The clue answer is not the final word. For example, if the clue asks for the first letter of a city and the city is Mumbai, the revealed letter is M.
+          </section>
+        </aside>
+      </div>
+
+      <section class="side-panel postgame-panel" id="commentPanel">
+        <div class="section-title">
+          <h3>Comment</h3>
+          <span class="small" id="commentMeta">After your run</span>
+        </div>
+        <div class="mobile-subhead">Leave a note after you finish.</div>
+        <form class="comment-form" id="commentForm">
+          <textarea class="comment-textarea" id="commentInput" maxlength="280" placeholder="How did today&apos;s puzzle feel?"></textarea>
+          <div class="comment-actions">
+            <div class="comment-status" id="commentStatus"></div>
+            <button class="btn primary" id="commentSubmitBtn" type="submit">Post comment</button>
+          </div>
+        </form>
+        <div class="comment-list" id="commentList"></div>
+      </section>
+    </section>
+
+    <section class="view" id="profileView">
+      <div class="hub-layout">
+        <section class="panel" style="padding:18px">
+          <div class="section-title">
+            <h2>Your Profile</h2>
+            <span class="small" id="profileMode">Guest</span>
+          </div>
+          <div class="stat-list">
+            <div class="stat-row"><span>Display name</span><strong id="profileName">Guest Player</strong></div>
+            <div class="stat-row"><span>Games finished</span><strong id="profileFinished">0</strong></div>
+            <div class="stat-row"><span>Best ReWorded time</span><strong id="profileBest">--</strong></div>
+            <div class="stat-row"><span>Current streak</span><strong id="profileStreak">0</strong></div>
+          </div>
+        </section>
+<aside class="side-panel">
+  <div class="section-title">
+    <h3>Today&apos;s Board</h3>
+    <span class="small" id="todayLabel"></span>
+  </div>
+  <div class="leader-list" id="hubLeaderboard"></div>
+</aside>        
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="finishModal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
+    <div class="modal">
+      <h2 id="finishTitle">Solved</h2>
+      <p id="finishCopy"></p>
+      <div class="modal-actions">
+        <button class="btn" type="button" id="closeModalBtn">Close</button>
+        <button class="btn primary" type="button" id="shareBtn">Share</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBXh3V4n1aOcvjZQjo65gzeStApV1RKWak",
+      authDomain: "bitsplay-c4e24.firebaseapp.com",
+      projectId: "bitsplay-c4e24",
+      storageBucket: "bitsplay-c4e24.firebasestorage.app",
+      messagingSenderId: "136928912243",
+      appId: "1:136928912243:web:8a154edc72b3081184db06"
+    };
+
+    const BANK = [
+      {
+        id: "2026-05-06",
+        word: "BRAVE",
+        clues: [
+          { prompt: "First letter of the capital of Germany.", answer: "Berlin", letter: "B" },
+          { prompt: "First letter of the city that hosted the 2016 Summer Olympics.", answer: "Rio de Janeiro", letter: "R" },
+          { prompt: "Last letter of the smallest continent.", answer: "Australia", letter: "A" },
+          { prompt: "First letter of the SI unit of electric potential.", answer: "Volt", letter: "V" },
+          { prompt: "Last letter of the author of Hamlet.", answer: "Shakespeare", letter: "E" }
+        ]
+      },
+      {
+        id: "2026-05-07",
+        word: "GRACE",
+        clues: [
+          { prompt: "First letter of the element with chemical symbol Au.", answer: "Gold", letter: "G" },
+          { prompt: "First letter of the city where the Colosseum stands.", answer: "Rome", letter: "R" },
+          { prompt: "Last letter of the continent surrounding the South Pole.", answer: "Antarctica", letter: "A" },
+          { prompt: "First letter of the first woman to win a Nobel Prize.", answer: "Curie", letter: "C" },
+          { prompt: "Last letter of the capital of Italy.", answer: "Rome", letter: "E" }
+        ]
+      },
+      {
+        id: "2026-05-08",
+        word: "PLANT",
+        clues: [
+          { prompt: "First letter of the capital of France.", answer: "Paris", letter: "P" },
+          { prompt: "First letter of the NBA team based in Los Angeles with purple and gold colors.", answer: "Lakers", letter: "L" },
+          { prompt: "First letter of the country that won the 2022 FIFA World Cup.", answer: "Argentina", letter: "A" },
+          { prompt: "Last letter of the web-slinging Marvel hero Spider-____.", answer: "Man", letter: "N" },
+          { prompt: "First letter of the number represented by the Roman numeral X.", answer: "Ten", letter: "T" }
+        ]
+      },
+      {
+        id: "2026-05-09",
+        word: "CROWN",
+        clues: [
+          { prompt: "First letter of the capital of Egypt.", answer: "Cairo", letter: "C" },
+          { prompt: "First letter of the city where the Colosseum stands.", answer: "Rome", letter: "R" },
+          { prompt: "First letter of the element with chemical symbol O.", answer: "Oxygen", letter: "O" },
+          { prompt: "First letter of the U.S. city where the White House is located.", answer: "Washington, D.C.", letter: "W" },
+          { prompt: "First letter of the capital of Kenya.", answer: "Nairobi", letter: "N" }
+        ]
+      },
+      {
+        id: "2026-05-10",
+        word: "SHARP",
+        clues: [
+          { prompt: "First letter of the author of Hamlet.", answer: "Shakespeare", letter: "S" },
+          { prompt: "First letter of the lightest chemical element.", answer: "Hydrogen", letter: "H" },
+          { prompt: "Last letter of the smallest continent.", answer: "Australia", letter: "A" },
+          { prompt: "First letter of the city where the Colosseum stands.", answer: "Rome", letter: "R" },
+          { prompt: "First letter of the largest ocean on Earth.", answer: "Pacific", letter: "P" }
+        ]
+      },
+      {
+        id: "2026-05-11",
+        word: "NOBLE",
+        clues: [
+          { prompt: "First letter of the capital of Kenya.", answer: "Nairobi", letter: "N" },
+          { prompt: "First letter of the element with chemical symbol O.", answer: "Oxygen", letter: "O" },
+          { prompt: "First letter of the capital of Germany.", answer: "Berlin", letter: "B" },
+          { prompt: "First letter of the NBA team based in Los Angeles with purple and gold colors.", answer: "Lakers", letter: "L" },
+          { prompt: "Last letter of the capital of Italy.", answer: "Rome", letter: "E" }
+        ]
+      },
+      {
+        id: "2026-05-12",
+        word: "QUEST",
+        clues: [
+          { prompt: "First letter of the capital of Ecuador.", answer: "Quito", letter: "Q" },
+          { prompt: "First letter of the country whose capital is Kampala.", answer: "Uganda", letter: "U" },
+          { prompt: "Last letter of the author of Hamlet.", answer: "Shakespeare", letter: "E" },
+          { prompt: "First letter of the planet known for its rings.", answer: "Saturn", letter: "S" },
+          { prompt: "First letter of the number represented by the Roman numeral X.", answer: "Ten", letter: "T" }
+        ]
+      }
+    ];
+
+    const FALLBACK_PUZZLES = [
+      {
+        word: "BRAVE",
+        clues: [
+          { prompt: "First letter of the capital of Germany.", answer: "Berlin", letter: "B" },
+          { prompt: "First letter of the city that hosted the 2016 Summer Olympics.", answer: "Rio de Janeiro", letter: "R" },
+          { prompt: "Last letter of the smallest continent.", answer: "Australia", letter: "A" },
+          { prompt: "First letter of the SI unit of electric potential.", answer: "Volt", letter: "V" },
+          { prompt: "Last letter of the author of Hamlet.", answer: "Shakespeare", letter: "E" }
+        ]
+      },
+      {
+        word: "GLORY",
+        clues: [
+          { prompt: "First letter of the element with chemical symbol Au.", answer: "Gold", letter: "G" },
+          { prompt: "First letter of the NBA team based in Los Angeles with purple and gold colors.", answer: "Lakers", letter: "L" },
+          { prompt: "First letter of the element with chemical symbol O.", answer: "Oxygen", letter: "O" },
+          { prompt: "First letter of the author of Harry Potter.", answer: "Rowling", letter: "R" },
+          { prompt: "Last letter of the planet closest to the Sun.", answer: "Mercury", letter: "Y" }
+        ]
+      },
+      {
+        word: "TRACE",
+        clues: [
+          { prompt: "First letter of the number represented by the Roman numeral X.", answer: "Ten", letter: "T" },
+          { prompt: "First letter of the city that hosted the 2016 Summer Olympics.", answer: "Rio de Janeiro", letter: "R" },
+          { prompt: "Last letter of the smallest continent.", answer: "Australia", letter: "A" },
+          { prompt: "First letter of the first woman to win a Nobel Prize.", answer: "Curie", letter: "C" },
+          { prompt: "Last letter of the capital of Italy.", answer: "Rome", letter: "E" }
+        ]
+      }
+    ];
+// --- UPGRADED AUDIO ENGINE ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    // Unlock audio on the very first tap/click anywhere on the screen
+    function unlockAudio() {
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      document.body.removeEventListener('touchstart', unlockAudio);
+      document.body.removeEventListener('click', unlockAudio);
+    }
+    document.body.addEventListener('touchstart', unlockAudio);
+    document.body.addEventListener('click', unlockAudio);
+
+    function playTone(freq, type, duration, vol = 0.1, delay = 0) {
+      try {
+        if (!audioCtx) return; // Wait until unlocked
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+        
+        // Smooth Volume Envelope (Stops the ugly clicking sound)
+        gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + duration);
+      } catch (e) { console.warn("Audio disabled"); }
+    }
+
+    function playSound(type) {
+      if (type === 'reveal') {
+        playTone(523.25, 'sine', 0.1, 0.05); // High C
+        playTone(659.25, 'sine', 0.15, 0.05, 0.08); // High E
+      } else if (type === 'win') {
+        playTone(440, 'triangle', 0.2, 0.08, 0);
+        playTone(554.37, 'triangle', 0.2, 0.08, 0.1);
+        playTone(659.25, 'triangle', 0.2, 0.08, 0.2);
+        playTone(880, 'triangle', 0.4, 0.08, 0.3);
+      } else if (type === 'error') {
+        playTone(200, 'square', 0.1, 0.03);
+        playTone(150, 'square', 0.15, 0.03, 0.1);
+      }
+    }    const DAILY_WORDS = [
+      "BRAVE", "GRACE", "PLANT", "CROWN", "SHARP", "NOBLE", "QUEST", "TRACE", "GLORY", "FIELD",
+      "SMART", "LIGHT", "BRAIN", "WORLD", "SPARK", "PRIDE", "CLEAR", "DRIVE", "FOCUS", "CHAMP",
+      "SOLVE", "TRUST", "MIGHT", "LEARN", "BUILD", "LOGIC", "POINT", "FRESH", "SCORE", "MATCH"
+    ];
+
+    const STORAGE_KEY = "daily_games_v1";
+    const THEME_KEY = "daily_games_theme";
+    const todayISO = toLocalISODate(new Date());
+    let appState = loadState();
+    let firebase = null;
+    let user = appState.user || null;
+    let timerHandle = null;
+    let elapsed = appState.current.elapsed || 0;
+    let startedAt = null;
+    let hintCooldown = 0;
+    let hintTimerHandle = null;
+    let puzzle = getTodayPuzzle();
+    let puzzleSource = "local";
+    let cloudComments = [];
+
+    const $ = (id) => document.getElementById(id);
+    const normalize = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const formatTime = (seconds) => {
+      const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
+      const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return `${mins}:${secs}`;
+    };
+
+    function toLocalISODate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function currentPlayerId() {
+      return user?.uid || "guest";
+    }
+
+    function currentSessionKey() {
+      return `${currentPlayerId()}::${puzzle?.id || todayISO}`;
+    }
+
+    function resultKeyForDate(date) {
+      return `${currentPlayerId()}::${date}`;
+    }
+
+    function currentPlayerResults() {
+      const playerId = currentPlayerId();
+      return Object.entries(appState.results || {})
+        .filter(([key, result]) => key.startsWith(`${playerId}::`) || result?.uid === playerId)
+        .map(([, result]) => result);
+    }
+
+    function hasResultForDate(date) {
+      const playerId = currentPlayerId();
+      const direct = appState.results?.[`${playerId}::${date}`];
+      if (direct) return true;
+      return Object.entries(appState.results || {}).some(([key, result]) => key === date && result?.uid === playerId);
+    }
+
+    function hasFirebaseConfig() {
+      return Object.values(FIREBASE_CONFIG).every(Boolean);
+    }
+
+    function loadState() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        return {
+          user: null,
+          results: parsed.results || {},
+          leaderboard: parsed.leaderboard || {},
+          comments: parsed.comments || {},
+          current: parsed.current || { puzzleId: "", clues: [], elapsed: 0, finished: false },
+          currents: parsed.currents || {},
+          profileName: parsed.profileName || "Guest Player"
+        };
+      } catch {
+        return { user: null, results: {}, leaderboard: {}, comments: {}, current: { puzzleId: "", clues: [], elapsed: 0, finished: false }, currents: {}, profileName: "Guest Player" };
+      }
+    }
+
+    function saveState() {
+      appState.currents = appState.currents || {};
+      appState.currents[currentSessionKey()] = appState.current;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        results: appState.results,
+        leaderboard: appState.leaderboard,
+        comments: appState.comments,
+        current: appState.current,
+        currents: appState.currents,
+        profileName: appState.profileName
+      }));
+    }
+
+    function getTodayPuzzle() {
+      const direct = BANK.find((item) => item.id === todayISO);
+      if (direct) return preparePuzzle({ ...direct, source: "local" });
+      const start = new Date("2026-05-06T00:00:00");
+      const now = new Date(`${todayISO}T00:00:00`);
+      const dayIndex = Math.max(0, Math.floor((now - start) / 86400000));
+      const fallback = FALLBACK_PUZZLES[dayIndex % FALLBACK_PUZZLES.length];
+      return preparePuzzle({ ...fallback, id: todayISO, source: "local" });
+    }
+
+    function field(data, names, fallback = "") {
+      for (const name of names) {
+        if (data && data[name] !== undefined && data[name] !== null && data[name] !== "") return data[name];
+      }
+      return fallback;
+    }
+
+    function getExtractedLetter(data, answer) {
+      const stored = field(data, ["extractedLetter", "letter", "targetLetter", "correctLetter", "answerLetter"], "");
+      if (stored) return String(stored).trim().charAt(0).toUpperCase();
+      const extraction = String(field(data, ["extractionType", "letterType", "type"], "first-letter")).toLowerCase();
+      const cleanAnswer = String(answer || "").trim();
+      if (!cleanAnswer) return "";
+      if (extraction.includes("last")) return cleanAnswer.charAt(cleanAnswer.length - 1).toUpperCase();
+      const position = Number(field(data, ["letterIndex", "position"], 1));
+      if (!Number.isNaN(position) && position > 1) return cleanAnswer.charAt(position - 1).toUpperCase();
+      return cleanAnswer.charAt(0).toUpperCase();
+    }
+
+    function normalizeQuestionDoc(snapshot) {
+      const data = snapshot.data ? snapshot.data() : snapshot;
+      const answer = String(field(data, ["answer", "correctAnswer", "solution"], "")).trim();
+      const prompt = String(field(data, ["prompt", "question", "clue", "text"], "")).trim();
+      const letter = getExtractedLetter(data, answer);
+      if (!prompt || !answer || !letter) return null;
+      return {
+        id: snapshot.id || data.id || "",
+        prompt,
+        answer,
+        letter,
+        category: String(field(data, ["category", "topic", "subject"], "General")),
+        difficulty: Number(field(data, ["difficulty", "level"], 1)),
+        source: String(field(data, ["source"], "firestore"))
+      };
+    }
+
+    function hashString(value) {
+      let hash = 2166136261;
+      for (let i = 0; i < value.length; i += 1) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function seededPick(items, seed) {
+      if (!items.length) return null;
+      return items[seed % items.length];
+    }
+
+    function shuffleWithSeed(items, seedText) {
+      const shuffled = items.slice();
+      let seed = hashString(seedText);
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        seed = Math.imul(seed ^ i, 2654435761) >>> 0;
+        const j = seed % (i + 1);
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    function preparePuzzle(rawPuzzle) {
+      return {
+        ...rawPuzzle,
+        clues: shuffleWithSeed(rawPuzzle.clues || [], `${rawPuzzle.id || todayISO}-${rawPuzzle.word}-clues`)
+      };
+    }
+
+    function buildPuzzleFromQuestions(questions) {
+      const byLetter = questions.reduce((groups, question) => {
+        const letter = question.letter.toUpperCase();
+        groups[letter] = groups[letter] || [];
+        groups[letter].push(question);
+        return groups;
+      }, {});
+      const startIndex = hashString(todayISO) % DAILY_WORDS.length;
+      const orderedWords = DAILY_WORDS.slice(startIndex).concat(DAILY_WORDS.slice(0, startIndex));
+
+      for (const word of orderedWords) {
+        const used = new Set();
+        const clues = [];
+        let ok = true;
+        word.split("").forEach((letter, index) => {
+          if (!ok) return;
+          const choices = (byLetter[letter] || []).filter((question) => !used.has(question.id));
+          if (!choices.length) {
+            ok = false;
+            return;
+          }
+          const choice = seededPick(choices, hashString(`${todayISO}-${word}-${letter}-${index}`));
+          used.add(choice.id);
+          clues.push(choice);
+        });
+        if (ok && clues.length === 5) return preparePuzzle({ id: todayISO, word, clues, source: "cloud-generated" });
+      }
+      return null;
+    }
+
+    async function getCloudPuzzle() {
+      if (!firebase) return null;
+      const dailyIds = [`${todayISO}_letter-clues`, todayISO];
+      for (const dailyId of dailyIds) {
+        const dailySnap = await firebase.getDoc(firebase.doc(firebase.db, "dailyPuzzles", dailyId));
+        if (!dailySnap.exists()) continue;
+        const daily = dailySnap.data();
+        const word = String(field(daily, ["word", "answer", "finalWord"], "")).trim().toUpperCase();
+        const clueIds = field(daily, ["clueIds", "questionIds", "questions"], []);
+        if (!word || !Array.isArray(clueIds) || clueIds.length < 5) continue;
+        const clueSnaps = await Promise.all(clueIds.slice(0, 5).map((id) => firebase.getDoc(firebase.doc(firebase.db, "questions", String(id)))));
+        const clues = clueSnaps.map(normalizeQuestionDoc).filter(Boolean);
+        if (clues.length === 5) return preparePuzzle({ id: todayISO, word, clues, source: "published" });
+      }
+
+      const questionsSnap = await firebase.getDocs(firebase.collection(firebase.db, "questions"));
+      const questions = questionsSnap.docs.map(normalizeQuestionDoc).filter(Boolean);
+      return buildPuzzleFromQuestions(questions);
+    }
+
+    async function loadCloudPuzzle() {
+      try {
+        const cloudPuzzle = await getCloudPuzzle();
+        if (!cloudPuzzle) return;
+        puzzle = cloudPuzzle;
+        puzzleSource = cloudPuzzle.source;
+        ensureCurrentPuzzle();
+        await loadCloudLeaderboard();
+        renderPuzzle();
+      } catch (error) {
+        console.warn("Cloud puzzle unavailable", error);
+      }
+    }
+
+    function ensureCurrentPuzzle() {
+      appState.currents = appState.currents || {};
+      const sessionKey = currentSessionKey();
+      if (!appState.currents[sessionKey]) {
+        appState.currents[sessionKey] = {
+          puzzleId: sessionKey,
+          date: puzzle.id,
+          playerId: currentPlayerId(),
+          clues: puzzle.clues.map(() => ({ solved: false, value: "" })),
+          elapsed: 0,
+          finished: false
+        };
+      }
+      appState.current = appState.currents[sessionKey];
+      elapsed = appState.current.elapsed || 0;
+      saveState();
+    }
+
+    function setView(viewId) {
+      document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
+      document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
+      if (viewId === "letterView") startTimer();
+    }
+
+    function renderPuzzle() {
+      ensureCurrentPuzzle();
+      $("todayLabel").textContent = new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      $("leaderboardDate").textContent = new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+// Clean player-facing status
+    $("timer").textContent = formatTime(elapsed);
+      updateHintButton();
+      const finished = !!appState.current?.finished;
+      $("gameLeaderboard").style.display = finished ? "" : "none";
+      $("leaderboardLocked").style.display = finished ? "none" : "";
+      
+
+      $("lettersBoard").innerHTML = puzzle.clues.map((clue, index) => {
+        const solved = appState.current.clues[index]?.solved;
+        return `<div class="letter-tile ${solved ? "revealed" : ""}">${solved ? clue.letter : "?"}</div>`;
+      }).join("");
+
+      $("clues").innerHTML = puzzle.clues.map((clue, index) => {
+        const current = appState.current.clues[index] || { solved: false, value: "" };
+        return `
+          <div class="clue-row ${current.solved ? "solved" : ""}">
+            <div class="clue-number">${index + 1}</div>
+            <div class="clue-text">${clue.prompt}</div>
+            <input class="answer-input" data-clue="${index}" value="${escapeHtml(current.value)}" ${current.solved ? "disabled" : ""} placeholder="Clue answer" autocomplete="off" />
+          </div>
+        `;
+      }).join("");
+
+      const solvedCount = appState.current.clues.filter((item) => item.solved).length;
+      $("progressText").textContent = `${solvedCount}/5`;
+      $("progressFill").style.width = `${(solvedCount / puzzle.clues.length) * 100}%`;
+      $("finalInput").disabled = appState.current.finished;
+      $("finalInput").value = appState.current.finished ? puzzle.word : "";
+      $("finalForm").querySelector("button").disabled = appState.current.finished;
+
+      document.querySelectorAll(".answer-input").forEach((input) => {
+        input.addEventListener("input", handleClueInput);
+      });
+
+      renderLeaderboards();
+      renderComments();
+      renderProfile();
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function updateHintButton() {
+      const hintBtn = $("hintBtn");
+      if (!hintBtn) return;
+      hintBtn.disabled = appState.current.finished || hintCooldown > 0;
+      hintBtn.textContent = hintCooldown > 0 ? `Hint ${hintCooldown}s` : "Hint";
+    }
+
+    function startHintCooldown() {
+      hintCooldown = 20;
+      updateHintButton();
+      if (hintTimerHandle) clearInterval(hintTimerHandle);
+      hintTimerHandle = setInterval(() => {
+        hintCooldown = Math.max(0, hintCooldown - 1);
+        updateHintButton();
+        if (hintCooldown === 0) {
+          clearInterval(hintTimerHandle);
+          hintTimerHandle = null;
+        }
+      }, 1000);
+    }
+
+    function showHint() {
+      if (hintCooldown > 0 || appState.current.finished) return;
+      startTimer();
+      const unsolved = appState.current.clues
+        .map((item, index) => ({ ...item, index }))
+        .filter((item) => !item.solved);
+      if (!unsolved.length) {
+        $("gameMessage").textContent = "All clue letters are already revealed.";
+        $("gameMessage").className = "message good";
+        return;
+      }
+      const pick = unsolved[Math.floor(Math.random() * unsolved.length)];
+      const clue = puzzle.clues[pick.index];
+      const answer = clue.answer;
+      const preview = answer.length <= 2
+        ? answer
+        : `${answer[0]}${"-".repeat(Math.max(1, answer.length - 2))}${answer[answer.length - 1]}`;
+      $("gameMessage").textContent = `Hint for clue ${pick.index + 1}: the answer looks like ${preview}.`;
+      $("gameMessage").className = "message";
+      startHintCooldown();
+    }
+
+   // --- UPDATED INPUT HANDLER ---
+    function handleClueInput(event) {
+      startTimer();
+      const inputElement = event.target;
+      const index = Number(inputElement.dataset.clue);
+      const value = inputElement.value;
+      appState.current.clues[index].value = value;
+
+      if (normalize(value) === normalize(puzzle.clues[index].answer)) {
+        appState.current.clues[index].solved = true;
+        $("gameMessage").textContent = `Letter ${index + 1} revealed.`;
+        $("gameMessage").className = "message good";
+        playSound('reveal');
+        saveState();
+        
+        // Incrementally update UI instead of wiping the whole board
+        inputElement.disabled = true;
+        inputElement.closest('.clue-row').classList.add('solved');
+        updateLettersBoardAndProgress(); 
+      } else {
+        saveState();
+      }
+    }
+
+    // --- NEW HELPER FUNCTION ---
+    function updateLettersBoardAndProgress() {
+      // Redraw only the top letters
+      $("lettersBoard").innerHTML = puzzle.clues.map((clue, index) => {
+        const solved = appState.current.clues[index]?.solved;
+        return `<div class="letter-tile ${solved ? "revealed" : ""}">${solved ? clue.letter : "?"}</div>`;
+      }).join("");
+
+      // Update progress bar
+      const solvedCount = appState.current.clues.filter((item) => item.solved).length;
+      $("progressText").textContent = `${solvedCount}/5`;
+      $("progressFill").style.width = `${(solvedCount / puzzle.clues.length) * 100}%`;
+    }
+    function startTimer() {
+      if (appState.current.finished) return;
+      if (timerHandle) return;
+      startedAt = Date.now() - elapsed * 1000;
+      timerHandle = setInterval(() => {
+        elapsed = Math.floor((Date.now() - startedAt) / 1000);
+        appState.current.elapsed = elapsed;
+        $("timer").textContent = formatTime(elapsed);
+        if (elapsed % 5 === 0) saveState();
+      }, 250);
+    }
+
+    function stopTimer() {
+      if (timerHandle) clearInterval(timerHandle);
+      timerHandle = null;
+      appState.current.elapsed = elapsed;
+      saveState();
+    }
+
+    function revealAllClues() {
+      appState.current.clues = puzzle.clues.map((clue) => ({
+        solved: true,
+        value: clue.answer
+      }));
+    }
+
+    function finishGame() {
+      stopTimer();
+      revealAllClues();
+      appState.current.finished = true;
+      const profileName = user?.displayName || appState.profileName || "Guest Player";
+      const photoURL = user?.photoURL || "";
+      const result = { time: elapsed, at: Date.now(), name: profileName, photoURL, uid: user?.uid || "guest" };
+      appState.results[resultKeyForDate(puzzle.id)] = result;
+
+      const boardKey = `letter-clues-${puzzle.id}`;
+      const existing = appState.leaderboard[boardKey] || [];
+      const withoutUser = existing.filter((entry) => entry.uid !== result.uid);
+      appState.leaderboard[boardKey] = [...withoutUser, result].sort((a, b) => a.time - b.time).slice(0, 10);
+      saveState();
+      syncResult(result);
+      renderPuzzle();
+      $("finishCopy").textContent = `You solved ${puzzle.word} in ${formatTime(elapsed)}.`;
+      $("finishModal").classList.add("open");
+    }
+
+    function renderLeaderboards() {
+      const boardKey = `letter-clues-${puzzle.id}`;
+      const rows = appState.leaderboard[boardKey] || [];
+      const html = rows.length ? rows.map((entry, index) => leaderRow(entry, index)).join("") : `<div class="small">No finishes yet. Be the first on today&apos;s board.</div>`;
+      $("hubLeaderboard").innerHTML = html;
+      $("gameLeaderboard").innerHTML = html;
+
+      const allResults = currentPlayerResults();
+      const best = allResults.length ? Math.min(...allResults.map((result) => result.time)) : null;
+      $("bestPill").textContent = `Best ${best == null ? "--" : formatTime(best)}`;
+      $("streakPill").textContent = `Streak ${getStreak()}`;
+    }
+
+    function leaderRow(entry, index) {
+      const image = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : `<span class="rank">${index + 1}</span>`;
+      return `
+        <div class="leader-row">
+          <div class="leader-person">
+            ${image}
+            <div class="leader-name">${escapeHtml(entry.name || "Player")}</div>
+          </div>
+          <div class="time">${formatTime(entry.time)}</div>
+        </div>
+      `;
+    }
+
+    function commentKey() {
+      return `comments::${puzzle.id}`;
+    }
+
+    function getLocalComments() {
+      return (appState.comments && appState.comments[commentKey()]) ? appState.comments[commentKey()] : [];
+    }
+
+    function visibleComments() {
+      const merged = new Map();
+      [...cloudComments, ...getLocalComments()].forEach((entry) => {
+        if (!entry || !entry.uid) return;
+        merged.set(entry.uid, entry);
+      });
+      return Array.from(merged.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    }
+
+    async function loadCloudComments() {
+      if (!firebase) {
+        cloudComments = [];
+        return;
+      }
+      try {
+        const ref = firebase.collection(firebase.db, "comments");
+        const snap = await firebase.getDocs(firebase.query(ref, firebase.orderBy("createdAtMs", "desc"), firebase.limit(24)));
+        cloudComments = snap.docs
+          .map((doc) => doc.data())
+          .filter((entry) => entry.puzzleId === puzzle.id)
+          .map((entry) => ({
+            uid: entry.uid,
+            name: entry.name || "Player",
+            text: entry.text || "",
+            createdAt: entry.createdAtMs || 0,
+            dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""
+          }));
+      } catch (error) {
+        console.warn("Comment feed unavailable", error);
+        cloudComments = [];
+      }
+    }
+
+    function renderComments() {
+      const panel = $("commentPanel");
+      const finished = !!appState.current?.finished;
+      panel.classList.toggle("visible", finished);
+      $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";
+      $("commentInput").disabled = !finished;
+      $("commentSubmitBtn").disabled = !finished;
+      if (!finished) {
+        $("commentStatus").textContent = "";
+        $("commentStatus").className = "comment-status";
+      }
+
+      const comments = visibleComments();
+      $("commentList").innerHTML = comments.length
+        ? comments.map((entry) => `
+          <article class="comment-card">
+            <div class="comment-meta">
+              <span>${escapeHtml(entry.name || "Player")}</span>
+              <span>${escapeHtml(entry.dateLabel || "")}</span>
+            </div>
+            <div class="comment-body">${escapeHtml(entry.text || "")}</div>
+          </article>
+        `).join("")
+        : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
+    }
+
+    async function submitComment(event) {
+      event.preventDefault();
+      if (!appState.current?.finished) return;
+      const input = $("commentInput");
+      const text = input.value.trim();
+      if (!text) {
+        $("commentStatus").textContent = "Write a short comment first.";
+        $("commentStatus").className = "comment-status bad";
+        return;
+      }
+
+      const entry = {
+        uid: currentPlayerId(),
+        name: user?.displayName || appState.profileName || "Guest Player",
+        text,
+        createdAt: Date.now(),
+        dateLabel: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      };
+
+      appState.comments = appState.comments || {};
+      const existing = getLocalComments().filter((item) => item.uid !== entry.uid);
+      appState.comments[commentKey()] = [...existing, entry].slice(-12);
+      saveState();
+      renderComments();
+      input.value = "";
+      $("commentStatus").textContent = "Comment saved.";
+      $("commentStatus").className = "comment-status good";
+
+      if (firebase && user) {
+        try {
+          await firebase.setDoc(firebase.doc(firebase.db, "comments", `${puzzle.id}_${user.uid}`), {
+            puzzleId: puzzle.id,
+            uid: user.uid,
+            name: user.displayName || "Player",
+            text,
+            game: "reworded",
+            createdAtMs: entry.createdAt,
+            updatedAt: firebase.serverTimestamp()
+          }, { merge: true });
+          await loadCloudComments();
+          renderComments();
+          $("commentStatus").textContent = "Comment posted.";
+        } catch (error) {
+          console.warn("Comment sync failed", error);
+          $("commentStatus").textContent = "Saved on this device. Cloud post failed.";
+          $("commentStatus").className = "comment-status bad";
+        }
+      }
+    }
+
+    function getStreak() {
+      let count = 0;
+      const cursor = new Date(`${todayISO}T00:00:00`);
+      if (!hasResultForDate(todayISO)) cursor.setDate(cursor.getDate() - 1);
+      while (true) {
+        const key = toLocalISODate(cursor);
+        if (!hasResultForDate(key)) break;
+        count += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return count;
+    }
+
+    function renderProfile() {
+      const allResults = currentPlayerResults();
+      const best = allResults.length ? Math.min(...allResults.map((result) => result.time)) : null;
+      $("profileName").textContent = user?.displayName || appState.profileName || "Guest Player";
+      $("profileMode").textContent = user ? "Google account" : "Guest";
+      $("profileFinished").textContent = String(allResults.length);
+      $("profileBest").textContent = best == null ? "--" : formatTime(best);
+      $("profileStreak").textContent = String(getStreak());
+      $("authLabel").textContent = user ? (user.displayName?.split(" ")[0] || "Account") : "Sign in";
+      $("profileAuthBtn").textContent = user ? "Sign out" : "Sign in with Google";
+$("firebaseStatus").textContent = user ? "Connected" : "Offline";
+$("firebaseStatus").style.color = user ? "var(--good)" : "var(--muted)";
+$("authDesc").textContent = user 
+  ? "Your account is linked and your progress is actively backing up to the cloud." 
+  : "Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.";
+    }
+
+    async function initFirebase() {
+      if (!hasFirebaseConfig()) {
+        renderProfile();
+        return;
+      }
+      try {
+        const [
+          { initializeApp },
+          { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
+          { getFirestore, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc },
+	  { getAnalytics }
+        ] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"),
+	import("https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js") // 
+        ]);
+        const app = initializeApp(FIREBASE_CONFIG);
+const analytics = getAnalytics(app); // <-- INITIALIZE IT HERE
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        firebase = { auth, db, provider, signInWithPopup, signOut, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc };
+        renderProfile();
+
+        onAuthStateChanged(auth, async (account) => {
+          user = account ? {
+            uid: account.uid,
+            displayName: account.displayName || "Player",
+            photoURL: account.photoURL || ""
+          } : null;
+          try {
+            await loadCloudLeaderboard();
+          } catch (error) {
+            console.warn("Leaderboard unavailable", error);
+          }
+          await loadCloudComments();
+          renderPuzzle();
+        });
+
+        await loadCloudPuzzle();
+      } catch (error) {
+        console.warn("Firebase unavailable", error);
+        $("firebaseStatus").textContent = "Firebase error";
+        $("finishTitle").textContent = "Firebase could not start";
+        $("finishCopy").textContent = error?.message || "Check the browser console and Firebase settings.";
+      }
+    }
+
+    async function authAction() {
+      if (!firebase) {
+        $("finishTitle").textContent = "Firebase not configured";
+        $("finishCopy").textContent = "Add this app's Firebase project config in index.html, then Google sign-in and shared leaderboards will turn on.";
+        $("finishModal").classList.add("open");
+        return;
+      }
+
+      try {
+        if (firebase.auth.currentUser) {
+          await firebase.signOut(firebase.auth);
+        } else {
+          await firebase.signInWithPopup(firebase.auth, firebase.provider);
+        }
+      } catch (error) {
+        console.warn("Auth error", error);
+        $("finishTitle").textContent = "Sign in failed";
+        $("finishCopy").textContent = error?.message || "Check that Google sign-in is enabled and localhost is an authorized domain.";
+        $("finishModal").classList.add("open");
+      }
+    }
+
+    async function syncResult(result) {
+      if (!firebase || !user) return;
+      const boardId = `letter-clues-${puzzle.id}`;
+      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", boardId, "entries", user.uid), {
+        ...result,
+        puzzleId: puzzle.id,
+        game: "letter-clues",
+        updatedAt: firebase.serverTimestamp()
+      }, { merge: true });
+      await loadCloudLeaderboard();
+    }
+
+    async function loadCloudLeaderboard() {
+      if (!firebase) return;
+      const boardId = `letter-clues-${puzzle.id}`;
+      const ref = firebase.collection(firebase.db, "leaderboards", boardId, "entries");
+      const snap = await firebase.getDocs(firebase.query(ref, firebase.orderBy("time", "asc"), firebase.limit(10)));
+      appState.leaderboard[boardId] = snap.docs.map((item) => item.data());
+      saveState();
+    }
+
+    function shareResult() {
+      const result = appState.results[resultKeyForDate(puzzle.id)];
+      const text = result
+        ? `BitsPlay - ReWorded ${puzzle.id}\nSolved in ${formatTime(result.time)}\n${appState.current.clues.map((item) => item.solved ? "#" : "-").join("")}`
+        : "BitsPlay - ReWorded";
+      if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+      } else {
+        navigator.clipboard?.writeText(text);
+        $("finishCopy").textContent = "Result copied to clipboard.";
+      }
+    }
+
+    document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
+    document.querySelectorAll("[data-view-jump]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.viewJump)));
+    document.querySelectorAll("[data-start-game]").forEach((button) => button.addEventListener("click", () => setView("letterView")));
+    $("authBtn").addEventListener("click", authAction);
+    $("profileAuthBtn").addEventListener("click", authAction);
+    $("themeBtn").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light");
+    });
+    $("closeModalBtn").addEventListener("click", () => $("finishModal").classList.remove("open"));
+    $("shareBtn").addEventListener("click", shareResult);
+    $("hintBtn").addEventListener("click", showHint);
+    $("commentForm").addEventListener("submit", submitComment);
+   $("finalForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      startTimer();
+      if (normalize($("finalInput").value) === normalize(puzzle.word)) {
+        $("gameMessage").textContent = "Correct.";
+        $("gameMessage").className = "message good";
+        playSound('win'); // <-- ADD WIN SOUND
+        finishGame();
+      } else {
+        $("gameMessage").textContent = "Not quite. Try rearranging the revealed letters.";
+        $("gameMessage").className = "message bad";
+        
+        // <-- ADD SHAKE & ERROR SOUND
+        playSound('error'); 
+        const inputElement = $("finalInput");
+        inputElement.classList.remove("shake");
+        void inputElement.offsetWidth; // Force a browser reflow to restart animation
+        inputElement.classList.add("shake");
+      }
+    });
+
+    window.addEventListener("beforeunload", stopTimer);
+
+    if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
+    ensureCurrentPuzzle();
+    renderPuzzle();
+    initFirebase();
+  </script>
+</body>
+</html>
+
+
+
