@@ -8,12 +8,19 @@ const ASSETS_TO_CACHE = [
 ];
 
 // Install the Service Worker and cache the files
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS_TO_CACHE))
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        // If the network works, update the cache and return the response
+        const resClone = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, resClone);
+        });
+        return response;
+      })
+      .catch(() => caches.match(event.request)) // If network fails, use cache
   );
-  self.skipWaiting();
 });
 
 // Serve cached files when offline or on weak networks
