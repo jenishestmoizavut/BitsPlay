@@ -16,6 +16,7 @@ self.addEventListener('install', event => {
 
 // Network-first strategy: Try the web, fallback to cache
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
   event.respondWith(
     fetch(event.request)
       .then(response => {
