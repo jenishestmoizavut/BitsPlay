@@ -1864,17 +1864,22 @@ const analytics = getAnalytics(app); // <-- INITIALIZE IT HERE
       }
     }
 
-    async function syncResult(result) {
-      if (!firebase || !user) return;
-      const boardId = `letter-clues-${puzzle.id}`;
-      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", boardId, "entries", user.uid), {
-        ...result,
-        puzzleId: puzzle.id,
-        game: "letter-clues",
-        updatedAt: firebase.serverTimestamp()
-      }, { merge: true });
-      await loadCloudLeaderboard();
-    }
+async function syncResult(result) {
+  if (!firebase) return; // Remove the "!user" restriction
+  
+  const boardId = `letter-clues-${puzzle.id}`;
+  const playerId = currentPlayerId(); // Use the persistent unique guest/user ID
+  
+  await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", boardId, "entries", playerId), {
+    ...result,
+    uid: playerId, // Ensure the document is written under their unique ID
+    puzzleId: puzzle.id,
+    game: "letter-clues",
+    updatedAt: firebase.serverTimestamp()
+  }, { merge: true });
+  
+  await loadCloudLeaderboard();
+}
 
     async function loadCloudLeaderboard() {
       if (!firebase) return;
