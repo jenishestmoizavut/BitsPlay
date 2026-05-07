@@ -749,7 +749,7 @@
     }
 
     @media (max-width: 620px) {
-      .shell { width: min(100% - 16px, 1180px); padding-top: 8px; padding-bottom: 22px; }
+      .shell { width: min(100% - 16px, 1180px); padding-top: 16px; padding-bottom: 22px; }
       .topbar { align-items: flex-start; gap: 10px; }
       .top-actions { width: 100%; justify-content: flex-start; }
       .tabs { padding: 10px 0 12px; gap: 6px; }
@@ -782,6 +782,17 @@
       .comment-actions { align-items: stretch; }
       .comment-actions .btn { width: 100%; }
     }
+	  @media (max-width: 620px) {
+  .topbar {
+    flex-direction: column; 
+    align-items: flex-start;
+  }
+  .top-actions {
+    width: 100%;
+    justify-content: space-between; /* Spreads buttons out */
+    margin-top: 10px;
+  }
+}
   </style>
 </head>
 <body>
@@ -1529,29 +1540,23 @@ function loadState() {
       startHintCooldown();
     }
 
-   // --- UPDATED INPUT HANDLER ---
-    function handleClueInput(event) {
-      startTimer();
-      const inputElement = event.target;
-      const index = Number(inputElement.dataset.clue);
-      const value = inputElement.value;
-      appState.current.clues[index].value = value;
+function handleClueInput(event) {
+  const inputElement = event.target;
+  const index = Number(inputElement.dataset.clue);
+  const value = inputElement.value;
+  appState.current.clues[index].value = value;
 
-      if (normalize(value) === normalize(puzzle.clues[index].answer)) {
-        appState.current.clues[index].solved = true;
-        $("gameMessage").textContent = `Letter ${index + 1} revealed.`;
-        $("gameMessage").className = "message good";
-        playSound('reveal');
-        saveState();
-        
-        // Incrementally update UI instead of wiping the whole board
-        inputElement.disabled = true;
-        inputElement.closest('.clue-row').classList.add('solved');
-        updateLettersBoardAndProgress(); 
-      } else {
-        saveState();
-      }
-    }
+  if (normalize(value) === normalize(puzzle.clues[index].answer)) {
+    appState.current.clues[index].solved = true;
+    // Update ONLY this row so focus isn't lost elsewhere
+    inputElement.disabled = true;
+    inputElement.closest('.clue-row').classList.add('solved');
+
+    playSound('reveal');
+    updateLettersBoardAndProgress(); // Only updates the top tiles and bar
+    saveState();
+  }
+}
 
     // --- NEW HELPER FUNCTION ---
     function updateLettersBoardAndProgress() {
