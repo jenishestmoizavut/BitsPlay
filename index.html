@@ -1714,39 +1714,13 @@ function loadState() {
     }
 
     async function submitComment(event) {
-      event.preventDefault();
-      if (!appState.current?.finished) return;
-      const input = $("commentInput");
-      const text = input.value.trim();
-      if (!text) {
-        $("commentStatus").textContent = "Write a short comment first.";
-        $("commentStatus").className = "comment-status bad";
-        return;
-      }
-
-      const entry = {
-        uid: currentPlayerId(),
-        name: user?.displayName || appState.profileName || "Guest Player",
-        text,
-        createdAt: Date.now(),
-        dateLabel: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      };
-
-      appState.comments = appState.comments || {};
-      const existing = getLocalComments().filter((item) => item.uid !== entry.uid);
-      appState.comments[commentKey()] = [...existing, entry].slice(-12);
-      saveState();
-      renderComments();
-      input.value = "";
-      $("commentStatus").textContent = "Comment saved.";
-      $("commentStatus").className = "comment-status good";
-
-      if (firebase && user) {
+      if (firebase) { // <-- REMOVED the "&& user" restriction
         try {
-          await firebase.setDoc(firebase.doc(firebase.db, "comments", `${puzzle.id}_${user.uid}`), {
+          const playerId = currentPlayerId(); // Use the unique ID
+          await firebase.setDoc(firebase.doc(firebase.db, "comments", `${puzzle.id}_${playerId}`), {
             puzzleId: puzzle.id,
-            uid: user.uid,
-            name: user.displayName || "Player",
+            uid: playerId,
+            name: user?.displayName || appState.profileName || "Guest Player",
             text,
             game: "reworded",
             createdAtMs: entry.createdAt,
