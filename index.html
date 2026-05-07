@@ -869,6 +869,7 @@
     <h3>Today&apos;s Board</h3>
     <span class="small" id="todayLabel"></span>
   </div>
+  <div id="hubLeaderboardLocked" class="leaderboard-locked">Finish the puzzle to see today&apos;s board.</div>
   <div class="leader-list" id="hubLeaderboard"></div>
 </aside>
 	  </div>
@@ -1393,7 +1394,9 @@ function loadState() {
         puzzle = cloudPuzzle;
         puzzleSource = cloudPuzzle.source;
         ensureCurrentPuzzle();
-        await loadCloudLeaderboard();
+        // Re-subscribe listeners to the new puzzle id
+        if (typeof subscribeLeaderboard === "function") subscribeLeaderboard();
+        if (typeof subscribeComments === "function") subscribeComments();
         renderPuzzle();
       } catch (error) {
         console.warn("Cloud puzzle unavailable", error);
@@ -1422,21 +1425,8 @@ function loadState() {
 	  async function setView(viewId) {
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
-  
   if (viewId === "letterView") startTimer();
-
-  // If viewing the Hub or Game, pull fresh data from Firebase
-  if (viewId === "hubView" || viewId === "letterView") {
-    try {
-      await Promise.all([
-        loadCloudLeaderboard(),
-        loadCloudComments()
-      ]);
-      renderPuzzle(); 
-    } catch (e) {
-      console.warn("Silent refresh failed", e);
-    }
-  }
+  renderPuzzle();
 }
 
 
@@ -1604,14 +1594,15 @@ function loadState() {
       stopTimer();
       revealAllClues();
       appState.current.finished = true;
+      const playerId = currentPlayerId();
       const profileName = user?.displayName || appState.profileName || "Guest Player";
       const photoURL = user?.photoURL || "";
-      const result = { time: elapsed, at: Date.now(), name: profileName, photoURL, uid: user?.uid || "guest" };
+      const result = { time: elapsed, at: Date.now(), name: profileName, photoURL, uid: playerId };
       appState.results[resultKeyForDate(puzzle.id)] = result;
 
       const boardKey = `letter-clues-${puzzle.id}`;
       const existing = appState.leaderboard[boardKey] || [];
-      const withoutUser = existing.filter((entry) => entry.uid !== result.uid);
+      const withoutUser = existing.filter((entry) => entry.uid !== playerId);
       appState.leaderboard[boardKey] = [...withoutUser, result].sort((a, b) => a.time - b.time).slice(0, 10);
       saveState();
       syncResult(result);
@@ -1623,8 +1614,15 @@ function loadState() {
     function renderLeaderboards() {
       const boardKey = `letter-clues-${puzzle.id}`;
       const rows = appState.leaderboard[boardKey] || [];
+      const finished = !!appState.current?.finished;
       const html = rows.length ? rows.map((entry, index) => leaderRow(entry, index)).join("") : `<div class="small">No finishes yet. Be the first on today&apos;s board.</div>`;
-      $("hubLeaderboard").innerHTML = html;
+
+      // Hub leaderboard: only show after the current player has finished
+      $("hubLeaderboardLocked").style.display = finished ? "none" : "";
+      $("hubLeaderboard").style.display = finished ? "" : "none";
+      if (finished) $("hubLeaderboard").innerHTML = html;
+
+      // In-game leaderboard: already gated by leaderboardLocked element
       $("gameLeaderboard").innerHTML = html;
 
       const allResults = currentPlayerResults();
@@ -1670,17 +1668,23 @@ function loadState() {
       }
       try {
         const ref = firebase.collection(firebase.db, "comments");
-        const snap = await firebase.getDocs(firebase.query(ref, firebase.orderBy("createdAtMs", "desc"), firebase.limit(24)));
-        cloudComments = snap.docs
-          .map((doc) => doc.data())
-          .filter((entry) => entry.puzzleId === puzzle.id)
-          .map((entry) => ({
+        const snap = await firebase.getDocs(
+          firebase.query(ref,
+            firebase.where("puzzleId", "==", puzzle.id),
+            firebase.orderBy("createdAtMs", "desc"),
+            firebase.limit(50)
+          )
+        );
+        cloudComments = snap.docs.map((doc) => {
+          const entry = doc.data();
+          return {
             uid: entry.uid,
             name: entry.name || "Player",
             text: entry.text || "",
             createdAt: entry.createdAtMs || 0,
             dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""
-          }));
+          };
+        });
       } catch (error) {
         console.warn("Comment feed unavailable", error);
         cloudComments = [];
@@ -1714,26 +1718,40 @@ function loadState() {
     }
 
     async function submitComment(event) {
-      if (firebase) { // <-- REMOVED the "&& user" restriction
-        try {
-          const playerId = currentPlayerId(); // Use the unique ID
-          await firebase.setDoc(firebase.doc(firebase.db, "comments", `${puzzle.id}_${playerId}`), {
-            puzzleId: puzzle.id,
-            uid: playerId,
-            name: user?.displayName || appState.profileName || "Guest Player",
-            text,
-            game: "reworded",
-            createdAtMs: entry.createdAt,
-            updatedAt: firebase.serverTimestamp()
-          }, { merge: true });
-          await loadCloudComments();
-          renderComments();
-          $("commentStatus").textContent = "Comment posted.";
-        } catch (error) {
-          console.warn("Comment sync failed", error);
-          $("commentStatus").textContent = "Saved on this device. Cloud post failed.";
-          $("commentStatus").className = "comment-status bad";
-        }
+      event.preventDefault();
+      const text = $("commentInput").value.trim();
+      if (!text) return;
+      if (!firebase) {
+        $("commentStatus").textContent = "Firebase not available.";
+        $("commentStatus").className = "comment-status bad";
+        return;
+      }
+      $("commentSubmitBtn").disabled = true;
+      $("commentStatus").textContent = "Posting…";
+      $("commentStatus").className = "comment-status";
+      try {
+        const playerId = currentPlayerId();
+        const now = Date.now();
+        await firebase.setDoc(firebase.doc(firebase.db, "comments", `${puzzle.id}_${playerId}`), {
+          puzzleId: puzzle.id,
+          uid: playerId,
+          name: user?.displayName || appState.profileName || "Guest Player",
+          text,
+          game: "reworded",
+          createdAtMs: now,
+          updatedAt: firebase.serverTimestamp()
+        }, { merge: true });
+        $("commentInput").value = "";
+        $("commentStatus").textContent = "Comment posted!";
+        $("commentStatus").className = "comment-status good";
+        await loadCloudComments();
+        renderComments();
+      } catch (error) {
+        console.warn("Comment sync failed", error);
+        $("commentStatus").textContent = "Post failed. Try again.";
+        $("commentStatus").className = "comment-status bad";
+      } finally {
+        $("commentSubmitBtn").disabled = false;
       }
     }
 
@@ -1776,7 +1794,7 @@ $("authDesc").textContent = user
         const [
           { initializeApp },
           { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
-          { getFirestore, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc },
+          { getFirestore, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where },
 	  { getAnalytics }
         ] = await Promise.all([
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
@@ -1789,8 +1807,53 @@ const analytics = getAnalytics(app); // <-- INITIALIZE IT HERE
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
-        firebase = { auth, db, provider, signInWithPopup, signOut, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc };
+        firebase = { auth, db, provider, signInWithPopup, signOut, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where };
         renderProfile();
+
+        // --- REAL-TIME LEADERBOARD LISTENER ---
+        let leaderboardUnsub = null;
+        function subscribeLeaderboard() {
+          if (leaderboardUnsub) leaderboardUnsub();
+          const boardId = `letter-clues-${puzzle.id}`;
+          const ref = firebase.collection(firebase.db, "leaderboards", boardId, "entries");
+          leaderboardUnsub = firebase.onSnapshot(
+            firebase.query(ref, firebase.orderBy("time", "asc"), firebase.limit(10)),
+            (snap) => {
+              appState.leaderboard[boardId] = snap.docs.map((d) => d.data());
+              saveState();
+              renderLeaderboards();
+            },
+            (err) => console.warn("Leaderboard listener error", err)
+          );
+        }
+
+        // --- REAL-TIME COMMENTS LISTENER ---
+        let commentsUnsub = null;
+        function subscribeComments() {
+          if (commentsUnsub) commentsUnsub();
+          const ref = firebase.collection(firebase.db, "comments");
+          commentsUnsub = firebase.onSnapshot(
+            firebase.query(ref,
+              firebase.where("puzzleId", "==", puzzle.id),
+              firebase.orderBy("createdAtMs", "desc"),
+              firebase.limit(50)
+            ),
+            (snap) => {
+              cloudComments = snap.docs.map((d) => {
+                const entry = d.data();
+                return {
+                  uid: entry.uid,
+                  name: entry.name || "Player",
+                  text: entry.text || "",
+                  createdAt: entry.createdAtMs || 0,
+                  dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""
+                };
+              });
+              renderComments();
+            },
+            (err) => console.warn("Comments listener error", err)
+          );
+        }
 
         onAuthStateChanged(auth, async (account) => {
           user = account ? {
@@ -1798,13 +1861,10 @@ const analytics = getAnalytics(app); // <-- INITIALIZE IT HERE
             displayName: account.displayName || "Player",
             photoURL: account.photoURL || ""
           } : null;
-          try {
-            await loadCloudLeaderboard();
-          } catch (error) {
-            console.warn("Leaderboard unavailable", error);
-          }
-          await loadCloudComments();
+          subscribeLeaderboard();
+          subscribeComments();
           renderPuzzle();
+          renderProfile();
         });
 
         await loadCloudPuzzle();
