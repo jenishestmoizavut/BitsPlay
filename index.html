@@ -1446,8 +1446,14 @@ function loadState() {
 
     function renderPuzzle() {
       ensureCurrentPuzzle();
-      $("todayLabel").textContent = new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      $("leaderboardDate").textContent = new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+	  // Calculate Puzzle Number
+      const startDate = new Date("2026-05-06T00:00:00");
+      const puzzleDate = new Date(`${todayISO}T00:00:00`);
+      const puzzleNumber = Math.max(1, Math.floor((puzzleDate - startDate) / 86400000) + 1);
+
+      // Set titles to Puzzle # instead of the Date
+      $("todayLabel").textContent = `Puzzle #${puzzleNumber}`;
+      $("leaderboardDate").textContent = `Puzzle #${puzzleNumber}`;
 // Clean player-facing status
     $("timer").textContent = formatTime(elapsed);
       updateHintButton();
@@ -1639,11 +1645,12 @@ function handleClueInput(event) {
       $("streakPill").textContent = `Streak ${getStreak()}`;
     }
 
-    function leaderRow(entry, index) {
-      const image = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : `<span class="rank">${index + 1}</span>`;
+	  function leaderRow(entry, index) {
+      const image = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : ``;
       return `
         <div class="leader-row">
           <div class="leader-person">
+            <span style="font-weight: 750; color: var(--muted); margin-right: 6px; width: 18px;">${index + 1}.</span>
             ${image}
             <div class="leader-name">${escapeHtml(entry.name || "Player")}</div>
           </div>
@@ -1934,9 +1941,16 @@ async function syncResult(result) {
 
     function shareResult() {
       const result = appState.results[resultKeyForDate(puzzle.id)];
+      
+      // Calculate the puzzle number based on your start date
+      const startDate = new Date("2026-05-06T00:00:00");
+      const puzzleDate = new Date(`${puzzle.id}T00:00:00`);
+      const puzzleNumber = Math.max(1, Math.floor((puzzleDate - startDate) / 86400000) + 1);
+
       const text = result
-        ? `BitsPlay - ReWorded ${puzzle.id}\nSolved in ${formatTime(result.time)}\n${appState.current.clues.map((item) => item.solved ? "#" : "-").join("")}`
-        : "BitsPlay - ReWorded";
+        ? `BitsPlay - ReWorded #${puzzleNumber}\nIt took me ${formatTime(result.time)} to solve, let me know how long you took! \njenishestmoizavut.github.io/BitsPlay`
+        : "BitsPlay - ReWorded\njenishestmoizavut.github.io/BitsPlay";
+        
       if (navigator.share) {
         navigator.share({ text }).catch(() => {});
       } else {
@@ -1944,7 +1958,6 @@ async function syncResult(result) {
         $("finishCopy").textContent = "Result copied to clipboard.";
       }
     }
-
     document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
     document.querySelectorAll("[data-view-jump]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.viewJump)));
     document.querySelectorAll("[data-start-game]").forEach((button) => button.addEventListener("click", () => setView("letterView")));
