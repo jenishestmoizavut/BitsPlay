@@ -904,10 +904,10 @@
 
           <div class="letters-board" id="lettersBoard" aria-label="Revealed letters"></div>
           <div class="clues" id="clues"></div>
-
-          <form class="final-answer" id="finalForm">
+<form class="final-answer" id="finalForm">
             <input id="finalInput" autocomplete="off" maxlength="5" placeholder="Final word" aria-label="Final word" />
             <button class="btn good" type="submit">Submit</button>
+            <button class="btn primary" id="persistentShareBtn" type="button" style="display: none;">Share Result</button>
             <div class="message" id="gameMessage"></div>
           </form>
         </section>
@@ -1488,7 +1488,21 @@ function loadState() {
       document.querySelectorAll(".answer-input").forEach((input) => {
         input.addEventListener("input", handleClueInput);
       });
+      
+      // Update Final Answer input
+      $("finalInput").disabled = finished;
+      $("finalInput").value = finished ? puzzle.word : "";
+      
+      // Swap the Submit and Share buttons based on game status
+      const submitBtn = $("finalForm").querySelector("button[type='submit']");
+      const persistentShareBtn = $("persistentShareBtn");
+      
+      if (submitBtn) submitBtn.style.display = finished ? "none" : "";
+      if (persistentShareBtn) persistentShareBtn.style.display = finished ? "" : "none";
 
+      document.querySelectorAll(".answer-input").forEach((input) => {
+        input.addEventListener("input", handleClueInput);
+      });
       renderLeaderboards();
       renderComments();
       renderProfile();
@@ -1971,19 +1985,18 @@ async function syncResult(result) {
     $("shareBtn").addEventListener("click", shareResult);
     $("hintBtn").addEventListener("click", showHint);
     $("commentForm").addEventListener("submit", submitComment);
-   $("finalForm").addEventListener("submit", (event) => {
+  $("finalForm").addEventListener("submit", (event) => {
       event.preventDefault();
       startTimer();
       if (normalize($("finalInput").value) === normalize(puzzle.word)) {
         $("gameMessage").textContent = "Correct.";
         $("gameMessage").className = "message good";
-        playSound('win'); // <-- ADD WIN SOUND
+        playSound('win'); 
         finishGame();
       } else {
         $("gameMessage").textContent = "Not quite. Try rearranging the revealed letters.";
         $("gameMessage").className = "message bad";
         
-        // <-- ADD SHAKE & ERROR SOUND
         playSound('error'); 
         const inputElement = $("finalInput");
         inputElement.classList.remove("shake");
@@ -1992,8 +2005,8 @@ async function syncResult(result) {
       }
     });
 
+    if ($("persistentShareBtn")) $("persistentShareBtn").addEventListener("click", shareResult);
     window.addEventListener("beforeunload", stopTimer);
-
     if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
     ensureCurrentPuzzle();
     renderPuzzle();
