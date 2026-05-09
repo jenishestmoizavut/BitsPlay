@@ -801,34 +801,6 @@ function renderComments() {
       );
     }
 
-function subscribeComments() {
-  if (!firebase) return;
-  if (commentsUnsub) commentsUnsub();
-  
-  const ref = firebase.collection(firebase.db, "comments");
-  const q = firebase.query(
-    ref, 
-    firebase.where("puzzleId", "==", todayISO), 
-    firebase.where("game", "==", "circuit"), 
-    firebase.orderBy("createdAtMs", "desc"), 
-    firebase.limit(50)
-  );
-
-  commentsUnsub = firebase.onSnapshot(q, (snap) => {
-    cloudComments = snap.docs.map((d) => {
-      const entry = d.data();
-      return { 
-        uid: entry.uid, 
-        name: entry.name || "Player", 
-        photoURL: entry.photoURL || "", // Store the photo
-        text: entry.text || "", 
-        createdAt: entry.createdAtMs || 0, 
-        dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" 
-      };
-    });
-    renderComments();
-  });
-}
 
     async function initFirebase() {
       try {
