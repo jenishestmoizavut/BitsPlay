@@ -342,11 +342,19 @@
         return { results: parsed.results || {}, leaderboard: parsed.leaderboard || {}, comments: parsed.comments || {}, currents: parsed.currents || {}, profileName: parsed.profileName || "Guest Player" };
       } catch { return { results: {}, leaderboard: {}, comments: {}, currents: {}, profileName: "Guest Player" }; }
     }
-
-    function saveState() {
+function saveState() {
       appState.currents = appState.currents || {};
       appState.currents[`${currentPlayerId()}::${puzzle.id}`] = appState.current;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ results: appState.results, leaderboard: appState.leaderboard, comments: appState.comments, currents: appState.currents, profileName: appState.profileName }));
+
+      // Real-time Cloud Sync
+      if (firebase && user) {
+         firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), {
+             reworded_current: appState.current,
+             reworded_results: appState.results,
+             updatedAt: firebase.serverTimestamp()
+         }, { merge: true });
+      }
     }
 
     function field(data, names, fallback = "") {
@@ -626,8 +634,43 @@
         onAuthStateChanged(firebase.auth, async (account) => {
           user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
           
-          if (firebase.onSnapshot) {
-            firebase.onSnapshot(firebase.query(firebase.collection(firebase.db, "leaderboards", `letter-clues-${todayISO}`, "entries"), firebase.orderBy("time", "asc"), firebase.limit(10)), (snap) => {
+          if (account && firebase.onSnapshot) {
+             // Subscribe to Cross-Device real-time sync
+             firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
+                if (docSnap.exists()) {
+                   const data = docSnap.data();
+                   let updated = false;
+                   
+                   // Merge results history across devices
+                   if (data.reworded_results) {
+                       const merged = { ...appState.results, ...data.reworded_results };
+                       if (JSON.stringify(merged) !== JSON.stringify(appState.results)) {
+                           appState.results = merged;
+                           updated = true;
+                       }
+                   }
+                   
+                   // Real-time sync today's progress
+                   if (data.reworded_current && data.reworded_current.date === puzzle.id) {
+                       const remote = data.reworded_current;
+                       const remoteSolved = remote.clues?.filter(c=>c.solved).length || 0;
+                       const localSolved = appState.current.clues?.filter(c=>c.solved).length || 0;
+                       
+                       if ((remote.finished && !appState.current.finished) || (!appState.current.finished && remoteSolved > localSolved)) {
+                           appState.current = remote;
+                           if (remote.elapsed) elapsed = remote.elapsed;
+                           updated = true;
+                       }
+                   }
+                   
+                   if (updated) {
+                       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                       renderPuzzle();
+                   }
+                }
+             });
+
+             firebase.onSnapshot(firebase.query(firebase.collection(firebase.db, "leaderboards", `letter-clues-${todayISO}`, "entries"), firebase.orderBy("time", "asc"), firebase.limit(10)), (snap) => {
               appState.leaderboard[`letter-clues-${todayISO}`] = snap.docs.map(d => d.data()); saveState(); renderLeaderboards();
             });
             firebase.onSnapshot(firebase.query(firebase.collection(firebase.db, "comments"), firebase.where("puzzleId", "==", todayISO), firebase.orderBy("createdAtMs", "desc"), firebase.limit(50)), (snap) => {
@@ -641,7 +684,6 @@
         await loadCloudPuzzle();
       } catch (error) {}
     }
-
     async function authAction() {
       if (!firebase) { $("finishTitle").textContent = "Firebase not configured"; $("finishModal").classList.add("open"); return; }
       try { if (firebase.auth.currentUser) await firebase.signOut(firebase.auth); else await firebase.signInWithPopup(firebase.auth, firebase.provider); } catch (error) {}
