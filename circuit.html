@@ -470,6 +470,7 @@
     let timerHandle = null;
     let elapsed = 0;
     let startedAt = null;
+    let lastSyncTime = -1; // Fix #3: Prevents interval spam to Firebase
     let cloudComments = [];
 
     function currentPlayerId() {
@@ -521,7 +522,12 @@
       timerHandle = setInterval(() => {
         elapsed = Math.floor((Date.now() - startedAt) / 1000);
         $("timer").textContent = formatTime(elapsed);
-        if (elapsed % 5 === 0) saveState();
+        
+        // Fix #3: Ensure it only triggers once per 5 seconds, not 4 times
+        if (elapsed > 0 && elapsed % 5 === 0 && elapsed !== lastSyncTime) {
+           lastSyncTime = elapsed;
+           saveState();
+        }
       }, 250);
     }
     
@@ -538,6 +544,8 @@
     }
 
     function initLevel() {
+      $("timer").textContent = formatTime(elapsed); // Fix #1: Moved this UP so it shows winning time when page reloads
+
       if (appState.finished) { renderFinishedState(); return; }
       
       const p = dailyPuzzles[appState.level];
@@ -549,7 +557,6 @@
       $("runBtn").textContent = 'Run Circuit';
       $("runBtn").style.display = "";
       $("levelIndicator").textContent = `Puzzle ${appState.level + 1} of 5`;
-      $("timer").textContent = formatTime(elapsed);
       document.querySelector('.operator-bank').style.display = '';
       renderBoard();
     }
@@ -604,6 +611,7 @@
           saveState();
           finishGame();
         } else {
+          stopTimer(); // Fix #2: Pauses the timer while you read the success message
           showMsg('Connection established.', 'good');
           $("runBtn").textContent = 'Next Puzzle';
           $("runBtn").onclick = () => { 
@@ -802,7 +810,10 @@
                       if (needsUpdate) {
                          appState.level = remote.level;
                          appState.finished = remote.finished;
-                         if (remote.elapsed) appState.elapsed = remote.elapsed;
+                         if (remote.elapsed) {
+                            appState.elapsed = remote.elapsed;
+                            elapsed = remote.elapsed; // Sync local tracker variable so it doesn't get overwritten
+                         }
                          localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
                          initLevel();
                       }
