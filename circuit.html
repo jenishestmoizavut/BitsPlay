@@ -83,7 +83,8 @@
     .message { grid-column: 1 / -1; min-height: 20px; color: var(--muted); font-size: 0.86rem; font-weight: 700; }
     .message.good { color: var(--good); }
     .message.bad { color: var(--bad); }
-/* --- COMMENT SECTION STYLES --- */
+
+    /* --- COMMENT SECTION STYLES --- */
     .postgame-panel { display: none; margin-top: 14px; }
     .postgame-panel.visible { display: block; animation: fadeUp 0.22s ease-out both; }
     .comment-form { display: grid; gap: 10px; }
@@ -102,6 +103,7 @@
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-5px); }
@@ -125,7 +127,6 @@
       .equation-board { font-size: 1.5rem; gap: 8px; }
       .slot { width: 40px; height: 40px; }
     }
-    
   </style>
 </head>
 <body>
@@ -196,7 +197,8 @@
         </section>
       </aside>
     </div>
-    </div> <section class="side-panel postgame-panel" id="commentPanel">
+
+    <section class="side-panel postgame-panel" id="commentPanel">
       <div class="section-title">
         <h3>Comment</h3>
         <span class="small" id="commentMeta">After your run</span>
@@ -210,7 +212,7 @@
       </form>
       <div class="comment-list" id="commentList"></div>
     </section>
-  </main>
+    
   </main>
 
   <div class="modal-backdrop" id="finishModal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
@@ -456,6 +458,7 @@
     const STORAGE_KEY = "circuit_games_v1";
     const THEME_KEY = "daily_games_theme";
     const todayISO = new Date().toISOString().split('T')[0];
+    const escapeHtml = (val) => String(val).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c]));
     
     let firebase = null;
     let user = null;
@@ -465,9 +468,8 @@
     let activeSlotIndex = null;
     let timerHandle = null;
     let elapsed = 0;
-    let cloudComments = [];
-const escapeHtml = (val) => String(val).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c]));
     let startedAt = null;
+    let cloudComments = [];
 
     function currentPlayerId() {
       return user?.uid || localStorage.getItem("guest_uid") || "guest";
@@ -631,94 +633,10 @@ const escapeHtml = (val) => String(val).replace(/[&<>"']/g, c => ({"&": "&amp;",
       $("leaderboardLocked").style.display = "none";
       document.querySelector('.operator-bank').style.display = 'none';
       renderLeaderboards();
-      renderComments(); // <-- ADD THIS LINE
+      renderComments();
     }
 
-    // ==========================================
-    // 5. FIREBASE INTEGRATION
-    // ==========================================
-    let leaderboardUnsub = null;
-    
-    function subscribeLeaderboard() {
-      if (!firebase) return;
-      if (leaderboardUnsub) leaderboardUnsub();
-      
-      const boardId = `circuit-${todayISO}`;
-      const ref = firebase.collection(firebase.db, "leaderboards", boardId, "entries");
-      leaderboardUnsub = firebase.onSnapshot(
-        firebase.query(ref, firebase.orderBy("time", "asc"), firebase.limit(10)),
-        (snap) => {
-          appState.leaderboard = snap.docs.map((d) => d.data());
-          saveState();
-          if (appState.finished) renderLeaderboards();
-        }
-      );
-    }
-let commentsUnsub = null;
-        function subscribeComments() {
-          if (commentsUnsub) commentsUnsub();
-          const ref = firebase.collection(firebase.db, "comments");
-          commentsUnsub = firebase.onSnapshot(
-            firebase.query(ref, firebase.where("puzzleId", "==", todayISO), firebase.where("game", "==", "circuit"), firebase.orderBy("createdAtMs", "desc"), firebase.limit(50)),
-            (snap) => {
-              cloudComments = snap.docs.map((d) => {
-                const entry = d.data();
-                return { uid: entry.uid, name: entry.name || "Player", text: entry.text || "", createdAt: entry.createdAtMs || 0, dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" };
-              });
-              renderComments();
-            }
-          );
-        }
-    async function initFirebase() {
-      try {
-        const [
-          { initializeApp }, { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
-          { getFirestore, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc }
-        ] = await Promise.all([
-          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
-          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
-          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
-        ]);
-        const app = initializeApp(FIREBASE_CONFIG);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
-        firebase = { auth, db, provider, signInWithPopup, signOut, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc };
-
-        onAuthStateChanged(auth, (account) => {
-          user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
-          $("authLabel").textContent = user ? (user.displayName.split(" ")[0]) : "Sign in";
-          subscribeLeaderboard();
-          subscribeComments();
-        });
-      } catch (error) { console.warn("Firebase unavailable", error); }
-    }
-
-    $("authBtn").addEventListener("click", async () => {
-      if (!firebase) return;
-      try {
-        if (firebase.auth.currentUser) await firebase.signOut(firebase.auth);
-        else await firebase.signInWithPopup(firebase.auth, firebase.provider);
-      } catch (e) { console.warn(e); }
-    });
-
-    async function syncResult(result) {
-      if (!firebase) return;
-      const boardId = `circuit-${todayISO}`;
-      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", boardId, "entries", result.uid), {
-        ...result, puzzleId: todayISO, game: "circuit", updatedAt: firebase.serverTimestamp()
-      }, { merge: true });
-    }
-
-    function renderLeaderboards() {
-      const escapeHtml = (val) => String(val).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c]));
-      const rows = appState.leaderboard || [];
-      $("gameLeaderboard").innerHTML = rows.length ? rows.map((entry, index) => {
-        const img = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : ``;
-        return `<div class="leader-row"><div class="leader-person"><span style="font-weight: 750; color: var(--muted); margin-right: 6px; width: 18px;">${index + 1}.</span>${img}<div class="leader-name">${escapeHtml(entry.name || "Player")}</div></div><div class="time">${formatTime(entry.time)}</div></div>`;
-      }).join("") : `<div class="small">No finishes yet. Be the first!</div>`;
-    }
-    // --- COMMENT LOGIC ---
+    // --- COMMENTS ENGINE ---
     function visibleComments() {
       return cloudComments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }
@@ -782,6 +700,93 @@ let commentsUnsub = null;
     }
     
     $("commentForm").addEventListener("submit", submitComment);
+
+    // ==========================================
+    // 5. FIREBASE INTEGRATION
+    // ==========================================
+    let leaderboardUnsub = null;
+    let commentsUnsub = null;
+    
+    function subscribeLeaderboard() {
+      if (!firebase) return;
+      if (leaderboardUnsub) leaderboardUnsub();
+      
+      const boardId = `circuit-${todayISO}`;
+      const ref = firebase.collection(firebase.db, "leaderboards", boardId, "entries");
+      leaderboardUnsub = firebase.onSnapshot(
+        firebase.query(ref, firebase.orderBy("time", "asc"), firebase.limit(10)),
+        (snap) => {
+          appState.leaderboard = snap.docs.map((d) => d.data());
+          saveState();
+          if (appState.finished) renderLeaderboards();
+        }
+      );
+    }
+
+    function subscribeComments() {
+      if (!firebase) return;
+      if (commentsUnsub) commentsUnsub();
+      const ref = firebase.collection(firebase.db, "comments");
+      commentsUnsub = firebase.onSnapshot(
+        firebase.query(ref, firebase.where("puzzleId", "==", todayISO), firebase.where("game", "==", "circuit"), firebase.orderBy("createdAtMs", "desc"), firebase.limit(50)),
+        (snap) => {
+          cloudComments = snap.docs.map((d) => {
+            const entry = d.data();
+            return { uid: entry.uid, name: entry.name || "Player", text: entry.text || "", createdAt: entry.createdAtMs || 0, dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" };
+          });
+          renderComments();
+        }
+      );
+    }
+
+    async function initFirebase() {
+      try {
+        const [
+          { initializeApp }, { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
+          { getFirestore, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where }
+        ] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
+        ]);
+        const app = initializeApp(FIREBASE_CONFIG);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        firebase = { auth, db, provider, signInWithPopup, signOut, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where };
+
+        onAuthStateChanged(auth, (account) => {
+          user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
+          $("authLabel").textContent = user ? (user.displayName.split(" ")[0]) : "Sign in";
+          subscribeLeaderboard();
+          subscribeComments();
+        });
+      } catch (error) { console.warn("Firebase unavailable", error); }
+    }
+
+    $("authBtn").addEventListener("click", async () => {
+      if (!firebase) return;
+      try {
+        if (firebase.auth.currentUser) await firebase.signOut(firebase.auth);
+        else await firebase.signInWithPopup(firebase.auth, firebase.provider);
+      } catch (e) { console.warn(e); }
+    });
+
+    async function syncResult(result) {
+      if (!firebase) return;
+      const boardId = `circuit-${todayISO}`;
+      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", boardId, "entries", result.uid), {
+        ...result, puzzleId: todayISO, game: "circuit", updatedAt: firebase.serverTimestamp()
+      }, { merge: true });
+    }
+
+    function renderLeaderboards() {
+      const rows = appState.leaderboard || [];
+      $("gameLeaderboard").innerHTML = rows.length ? rows.map((entry, index) => {
+        const img = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : ``;
+        return `<div class="leader-row"><div class="leader-person"><span style="font-weight: 750; color: var(--muted); margin-right: 6px; width: 18px;">${index + 1}.</span>${img}<div class="leader-name">${escapeHtml(entry.name || "Player")}</div></div><div class="time">${formatTime(entry.time)}</div></div>`;
+      }).join("") : `<div class="small">No finishes yet. Be the first!</div>`;
+    }
 
     // --- UTILS ---
     if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
