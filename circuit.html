@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7f8fb" />
+  <title>Circuit | BitsPlay</title>
+  <link rel="icon" type="image/png" href="BitsPlay.png" />
+  <style>
+    /* --- CORE BITSPLAY STYLES --- */
+    :root {
+      --bg: #f7f8fb; --panel: #ffffff; --panel-soft: #f1f5f9; --line: #dfe5ee;
+      --text: #111827; --soft: #526174; --muted: #7b8797;
+      --accent: #2563eb; --accent-soft: #e9f1ff;
+      --good: #16803c; --good-soft: #e8f7ee;
+      --warn: #a15c07; --warn-soft: #fff3dc;
+      --bad: #b42318; --shadow: 0 20px 50px rgba(15, 23, 42, 0.09);
+      --radius: 8px;
+    }
+    body.dark {
+      --bg: #0b1020; --panel: #11182a; --panel-soft: #172033; --line: #273349;
+      --text: #edf2f8; --soft: #bec9d8; --muted: #91a0b4;
+      --accent: #60a5fa; --accent-soft: #132944;
+      --good: #5ee08a; --good-soft: #123420;
+      --warn: #f7bd59; --warn-soft: #38280e;
+      --bad: #ff8f87; --shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+    button { border: 0; cursor: pointer; color: inherit; font: inherit; }
+    button:disabled { cursor: default; opacity: 0.55; }
+    
+    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 36px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .brand-mark { width: 34px; height: 34px; border-radius: var(--radius); background: var(--accent); display: grid; place-items: center; color: white; font-weight: 800; }
+    .brand h1 { font-size: 1.05rem; margin: 0; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; }
+    .top-actions { display: flex; gap: 8px; }
+    
+    .btn { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 8px 13px; background: var(--panel-soft); border: 1px solid var(--line); font-weight: 650; font-size: 0.86rem; transition: transform 0.12s ease, border-color 0.12s ease; }
+    .btn:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn.good { background: var(--good); border-color: var(--good); color: white; }
+    .btn.icon { width: 38px; padding: 0; }
+    
+    .game-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+    .play-area { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .game-header { padding: 18px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .game-header h2 { margin: 0 0 5px; font-size: clamp(1.5rem, 3vw, 2.25rem); letter-spacing: 0; }
+    .game-header p { margin: 0; color: var(--soft); max-width: 680px; line-height: 1.45; }
+    .game-tools { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .timer-box { min-width: 94px; text-align: right; font-size: 1.45rem; font-variant-numeric: tabular-nums; font-weight: 850; color: var(--accent); }
+    
+    .side-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+    .section-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .section-title h3 { margin: 0; font-size: 1rem; }
+    .small { color: var(--muted); font-size: 0.8rem; }
+    .leaderboard-locked { color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
+    .leader-list { display: flex; flex-direction: column; gap: 8px; }
+    .leader-row { min-height: 44px; border-radius: var(--radius); background: var(--panel-soft); border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; }
+    .leader-person { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .leader-name { font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .time { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--accent); }
+    .avatar { width: 28px; height: 28px; border-radius: 999px; object-fit: cover; border: 1px solid var(--line); }
+
+    /* --- CIRCUIT SPECIFIC STYLES --- */
+    .circuit-board { padding: 40px 18px; text-align: center; }
+    .level-indicator { color: var(--muted); font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; display: flex; justify-content: center; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .equation-board { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 40px; font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .static-token { color: var(--text); }
+    .slot { width: 50px; height: 50px; border-radius: var(--radius); background: var(--panel-soft); border: 2px dashed var(--line); display: grid; place-items: center; color: var(--accent); cursor: pointer; transition: all 0.2s ease; }
+    .slot:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .slot.active { border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+    .slot.filled { border-style: solid; background: var(--panel); }
+    .operator-bank { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 300px; margin: 0 auto 32px auto; }
+    .op-btn { height: 54px; border-radius: var(--radius); background: var(--panel-soft); border: 1px solid var(--line); font-size: 1.5rem; font-weight: 800; color: var(--text); transition: all 0.1s ease; }
+    .op-btn:hover { background: var(--panel); border-color: var(--accent); color: var(--accent); }
+    .op-btn:active { transform: scale(0.95); }
+
+    .final-action-bar { border-top: 1px solid var(--line); padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--panel); }
+    .message { grid-column: 1 / -1; min-height: 20px; color: var(--muted); font-size: 0.86rem; font-weight: 700; }
+    .message.good { color: var(--good); }
+    .message.bad { color: var(--bad); }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+    .shake { animation: shake 0.4s ease-in-out; }
+
+    /* Modals */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.48); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 50; }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: min(440px, 100%); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; z-index: 51; }
+    .modal h2 { margin: 0 0 8px; }
+    .modal p { color: var(--soft); line-height: 1.5; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    @media (max-width: 880px) { .game-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 620px) { 
+      .shell { width: min(100% - 16px, 1180px); padding-top: 16px; padding-bottom: 22px; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .top-actions { width: 100%; justify-content: space-between; margin-top: 10px; }
+      .equation-board { font-size: 1.5rem; gap: 8px; }
+      .slot { width: 40px; height: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a href="index.html" class="brand">
+        <img src="BitsPlay.png" alt="BitsPlay Logo" class="brand-mark" style="background: transparent; object-fit: contain; padding: 2px;">
+        <div>
+          <h1>Circuit</h1>
+          <p>Return to BitsPlay Hub</p>
+        </div>
+      </a>
+      <div class="top-actions">
+        <button class="btn icon" id="themeBtn" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 3v2.2M12 18.8V21M4.8 4.8l1.55 1.55M17.65 17.65l1.55 1.55M3 12h2.2M18.8 12H21M4.8 19.2l1.55-1.55M17.65 6.35l1.55-1.55" />
+            <circle cx="12" cy="12" r="3.6" />
+          </svg>
+        </button>
+        <button class="btn" id="authBtn" type="button">
+          <span id="authLabel">Sign in</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="game-layout">
+      <section class="play-area">
+        <div class="game-header">
+          <div>
+            <h2 id="puzzleDateTitle">Circuit</h2>
+            <p>Fill the empty slots with the correct operators to complete the logical circuit.</p>
+          </div>
+          <div class="game-tools">
+            <div class="timer-box" id="timer">00:00</div>
+          </div>
+        </div>
+
+        <div class="circuit-board">
+          <div class="level-indicator">
+            <span id="levelIndicator">Puzzle 1 of 5</span>
+          </div>
+          <div class="equation-board" id="equationBoard" aria-label="Equation"></div>
+          
+          <div class="operator-bank">
+            <button class="op-btn" data-op="+">+</button>
+            <button class="op-btn" data-op="-">-</button>
+            <button class="op-btn" data-op="×">×</button>
+            <button class="op-btn" data-op="÷">÷</button>
+            <button class="op-btn" data-op="!">!</button>
+            <button class="op-btn" data-op="√">√</button>
+          </div>
+        </div>
+
+        <div class="final-action-bar">
+          <div class="message" id="messageArea"></div>
+          <button class="btn primary" id="runBtn" style="min-width: 120px;">Run Circuit</button>
+        </div>
+      </section>
+
+      <aside class="drawer">
+        <section class="side-panel" id="gameLeaderboardPanel">
+          <div class="section-title">
+            <h3>Leaderboard</h3>
+            <span class="small" id="leaderboardStatus"></span>
+          </div>
+          <div class="leaderboard-locked" id="leaderboardLocked">Finish all 5 puzzles to unlock today&apos;s board.</div>
+          <div class="leader-list" id="gameLeaderboard"></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" id="finishModal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
+    <div class="modal">
+      <h2 id="finishTitle">Circuit Complete</h2>
+      <p id="finishCopy"></p>
+      <div class="modal-actions">
+        <button class="btn" type="button" id="closeModalBtn">Close</button>
+        <button class="btn primary" type="button" id="shareBtn">Share Result</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // ==========================================
+    // 0. FIREBASE CONFIGURATION
+    // ==========================================
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBXh3V4n1aOcvjZQjo65gzeStApV1RKWak",
+      authDomain: "bitsplay-c4e24.firebaseapp.com",
+      projectId: "bitsplay-c4e24",
+      storageBucket: "bitsplay-c4e24.firebasestorage.app",
+      messagingSenderId: "136928912243",
+      appId: "1:136928912243:web:8a154edc72b3081184db06"
+    };
+
+    // ==========================================
+    // 1. AUDIO & VISUAL ENGINE
+    // ==========================================
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function unlockAudio() {
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      document.body.removeEventListener('touchstart', unlockAudio);
+      document.body.removeEventListener('click', unlockAudio);
+    }
+    document.body.addEventListener('touchstart', unlockAudio);
+    document.body.addEventListener('click', unlockAudio);
+
+    function playTone(freq, type, duration, vol = 0.1, delay = 0) {
+      try {
+        if (!audioCtx) return; 
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+        gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + duration);
+      } catch (e) { }
+    }
+
+    function playSound(type) {
+      if (type === 'reveal') {
+        playTone(523.25, 'sine', 0.1, 0.05); 
+        playTone(659.25, 'sine', 0.15, 0.05, 0.08); 
+      } else if (type === 'win') {
+        playTone(440, 'triangle', 0.2, 0.08, 0);
+        playTone(554.37, 'triangle', 0.2, 0.08, 0.1);
+        playTone(659.25, 'triangle', 0.2, 0.08, 0.2);
+        playTone(880, 'triangle', 0.4, 0.08, 0.3);
+      } else if (type === 'error') {
+        playTone(200, 'square', 0.1, 0.03);
+        playTone(150, 'square', 0.15, 0.03, 0.1);
+      }
+    }
+
+    function fireConfetti() {
+      const colors = ['#2563eb', '#16803c', '#f7bd59', '#ff8f87'];
+      for (let i = 0; i < 80; i++) {
+        const conf = document.createElement('div');
+        conf.style.position = 'fixed';
+        conf.style.width = (Math.random() * 8 + 4) + 'px';
+        conf.style.height = (Math.random() * 8 + 4) + 'px';
+        conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        conf.style.left = Math.random() * 100 + 'vw';
+        conf.style.top = '-10px';
+        conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        conf.style.zIndex = '9999';
+        conf.style.pointerEvents = 'none';
+        document.body.appendChild(conf);
+
+        const fallDuration = Math.random() * 2 + 1.5;
+        const xDrift = (Math.random() - 0.5) * 300;
+        
+        conf.animate([
+          { transform: `translate3d(0,0,0) rotate(0deg)`, opacity: 1 },
+          { transform: `translate3d(${xDrift}px, 100vh, 0) rotate(${Math.random()*720}deg)`, opacity: 0 }
+        ], {
+          duration: fallDuration * 1000,
+          easing: 'cubic-bezier(.37,0,.63,1)',
+          fill: 'forwards'
+        });
+
+        setTimeout(() => conf.remove(), fallDuration * 1000);
+      }
+    }
+
+    // ==========================================
+    // 2. TRUE DYNAMIC MATH PARSER 
+    // ==========================================
+    const calcBinary = (a, op, b) => {
+      if (a === null || b === null) return null;
+      if (op === '+') return a + b;
+      if (op === '-') return a - b;
+      if (op === '×') return a * b;
+      if (op === '÷') return (b !== 0 && a % b === 0) ? a / b : null;
+      return null;
+    };
+    const calcFact = (n) => {
+      if (!Number.isInteger(n) || n < 0 || n > 12) return null;
+      let r = 1; for (let i = 2; i <= n; i++) r *= i; return r;
+    };
+    const calcSqrt = (n) => {
+      if (n < 0) return null;
+      let r = Math.sqrt(n); return Number.isInteger(r) ? r : null;
+    };
+
+    const PRECEDENCE = { '+': 1, '-': 1, '×': 2, '÷': 2, '√': 3, '!': 4 };
+    const ASSOCIATIVITY = { '+': 'L', '-': 'L', '×': 'L', '÷': 'L', '√': 'R', '!': 'L' };
+
+    function infixToRPN(tokens) {
+      let output = [], ops = [];
+      for (let t of tokens) {
+        if (typeof t === 'number') output.push(t);
+        else if (t === '(') ops.push(t);
+        else if (t === ')') {
+          while (ops.length > 0 && ops[ops.length - 1] !== '(') output.push(ops.pop());
+          if (ops.length === 0) return null;
+          ops.pop(); 
+        } else if (PRECEDENCE[t]) {
+          while (
+            ops.length > 0 && ops[ops.length - 1] !== '(' && 
+            ((ASSOCIATIVITY[t] === 'L' && PRECEDENCE[t] <= PRECEDENCE[ops[ops.length - 1]]) ||
+            (ASSOCIATIVITY[t] === 'R' && PRECEDENCE[t] < PRECEDENCE[ops[ops.length - 1]]))
+          ) output.push(ops.pop());
+          ops.push(t);
+        }
+      }
+      while (ops.length > 0) {
+        let op = ops.pop();
+        if (op === '(' || op === ')') return null;
+        output.push(op);
+      }
+      return output;
+    }
+
+    function evaluateRPN(rpn) {
+      if (!rpn) return null; 
+      let stack = [];
+      for (let t of rpn) {
+        if (typeof t === 'number') stack.push(t);
+        else if (t === '!') {
+          if (stack.length < 1) return null;
+          let res = calcFact(stack.pop());
+          if (res === null) return null;
+          stack.push(res);
+        } else if (t === '√') {
+          if (stack.length < 1) return null;
+          let res = calcSqrt(stack.pop());
+          if (res === null) return null;
+          stack.push(res);
+        } else {
+          if (stack.length < 2) return null;
+          let b = stack.pop(), a = stack.pop();
+          let res = calcBinary(a, t, b);
+          if (res === null) return null;
+          stack.push(res);
+        }
+      }
+      return stack.length === 1 ? stack[0] : null; 
+    }
+
+    function evaluatePlayerEquation(template, userSlots) {
+      let tokens = [];
+      let slotIndex = 0;
+      for (let t of template) {
+        if (t === '=') break; 
+        if (t === 'SLOT') {
+          tokens.push(userSlots[slotIndex]);
+          slotIndex++;
+        } else {
+          tokens.push(t);
+        }
+      }
+      return evaluateRPN(infixToRPN(tokens));
+    }
+
+    // ==========================================
+    // 3. GENERATOR
+    // ==========================================
+    function xmur3(str) {
+      let h = 1779033703 ^ str.length;
+      for(let i = 0; i < str.length; i++) {
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = h << 13 | h >>> 19;
+      }
+      return function() { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return (h ^= h >>> 16) >>> 0; }
+    }
+    function mulberry32(a) { return function() { var t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+
+    function generateDailyPuzzles(dateStr) {
+      const rng = mulberry32(xmur3(dateStr)());
+      const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+      const rInt = (min, max) => Math.floor(rng() * (max - min + 1)) + min;
+      const binOps = ['+', '-', '×', '÷'];
+      const sqrts = [4, 9, 16, 25, 36, 49, 64, 81, 100];
+      const puzzles = [];
+
+      const generateScaffold = (scaffoldFn) => {
+        let maxAttempts = 1000;
+        while(maxAttempts > 0) {
+          const attempt = scaffoldFn();
+          const target = evaluatePlayerEquation(attempt.template, attempt.solution);
+          if (target !== null && target > 0) {
+            attempt.target = target;
+            attempt.template.push('=', target);
+            return attempt;
+          }
+          maxAttempts--;
+        }
+      }
+
+      puzzles.push(generateScaffold(() => { let n = [rInt(2, 20), rInt(2, 20), rInt(2, 20)]; return { solution: [pick(binOps), pick(binOps)], template: ['(', n[0], 'SLOT', n[1], ')', 'SLOT', n[2]] }; }));
+      puzzles.push(generateScaffold(() => { let n = [rInt(3, 5), rInt(2, 20)]; return { solution: ['!', pick(binOps)], template: ['(', n[0], 'SLOT', ')', 'SLOT', n[1]] }; }));
+      puzzles.push(generateScaffold(() => { let n = [pick(sqrts), rInt(2, 20), rInt(2, 20)]; return { solution: ['√', pick(binOps), pick(binOps)], template: ['SLOT', n[0], 'SLOT', '(', n[1], 'SLOT', n[2], ')'] }; }));
+      puzzles.push(generateScaffold(() => { let n = [rInt(3, 5), pick(sqrts)]; return { solution: ['!', pick(binOps), '√'], template: ['(', n[0], 'SLOT', ')', 'SLOT', 'SLOT', n[1]] }; }));
+      puzzles.push(generateScaffold(() => { let n = [pick(sqrts), rInt(3, 5)]; return { solution: ['√', pick(binOps), '!'], template: ['(', 'SLOT', n[0], ')', 'SLOT', n[1], 'SLOT'] }; }));
+      return puzzles;
+    }
+
+    // ==========================================
+    // 4. GAME STATE & INTEGRATION
+    // ==========================================
+    const $ = (id) => document.getElementById(id);
+    const STORAGE_KEY = "circuit_games_v1";
+    const THEME_KEY = "daily_games_theme";
+    const todayISO = new Date().toISOString().split('T')[0];
+    
+    let firebase = null;
+    let user = null;
+    let dailyPuzzles = [];
+    let appState = {};
+    let userSlots = [];
+    let activeSlotIndex = null;
+    let timerHandle = null;
+    let elapsed = 0;
+    let startedAt = null;
+
+    function currentPlayerId() {
+      return user?.uid || localStorage.getItem("guest_uid") || "guest";
+    }
+
+    function setPuzzleTitles() {
+      const startDate = new Date("2026-05-10T00:00:00");
+      const puzzleDate = new Date(`${todayISO}T00:00:00`);
+      const puzzleNumber = Math.max(1, Math.floor((puzzleDate - startDate) / 86400000) + 1);
+      
+      $("puzzleDateTitle").textContent = `Circuit #${puzzleNumber}`;
+    }
+
+    function loadStateForDate() {
+      if (!localStorage.getItem("guest_uid")) {
+        localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));
+      }
+      
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        if (parsed.date !== todayISO) throw new Error("New day");
+        return { date: todayISO, level: parsed.level || 0, elapsed: parsed.elapsed || 0, finished: parsed.finished || false, leaderboard: parsed.leaderboard || [] };
+      } catch {
+        return { date: todayISO, level: 0, elapsed: 0, finished: false, leaderboard: [] };
+      }
+    }
+
+    function saveState() {
+      appState.elapsed = elapsed;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    }
+
+    const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+
+    function startTimer() {
+      if (appState.finished || timerHandle) return;
+      startedAt = Date.now() - elapsed * 1000;
+      timerHandle = setInterval(() => {
+        elapsed = Math.floor((Date.now() - startedAt) / 1000);
+        $("timer").textContent = formatTime(elapsed);
+        if (elapsed % 5 === 0) saveState();
+      }, 250);
+    }
+    
+    function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; saveState(); }
+
+    function loadGameSession() {
+      setPuzzleTitles();
+      dailyPuzzles = generateDailyPuzzles(todayISO);
+      appState = loadStateForDate();
+      elapsed = appState.elapsed;
+      
+      if (firebase) subscribeLeaderboard();
+      initLevel();
+    }
+
+    function initLevel() {
+      if (appState.finished) { renderFinishedState(); return; }
+      
+      const p = dailyPuzzles[appState.level];
+      const slotCount = p.template.filter(t => t === 'SLOT').length;
+      userSlots = new Array(slotCount).fill('');
+      activeSlotIndex = 0;
+      
+      $("messageArea").textContent = '';
+      $("runBtn").textContent = 'Run Circuit';
+      $("runBtn").style.display = "";
+      $("levelIndicator").textContent = `Puzzle ${appState.level + 1} of 5`;
+      $("timer").textContent = formatTime(elapsed);
+      document.querySelector('.operator-bank').style.display = '';
+      renderBoard();
+    }
+
+    function renderBoard() {
+      const board = $("equationBoard");
+      board.innerHTML = '';
+      let slotIdx = 0;
+      dailyPuzzles[appState.level].template.forEach((token) => {
+        if (token === 'SLOT') {
+          const div = document.createElement('div');
+          const i = slotIdx;
+          div.className = `slot ${activeSlotIndex === i ? 'active' : ''} ${userSlots[i] ? 'filled' : ''}`;
+          div.textContent = userSlots[i];
+          div.onclick = () => { activeSlotIndex = i; startTimer(); renderBoard(); };
+          board.appendChild(div);
+          slotIdx++;
+        } else {
+          const div = document.createElement('div');
+          div.className = 'static-token';
+          div.textContent = token;
+          board.appendChild(div);
+        }
+      });
+    }
+
+    document.querySelectorAll('.op-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (activeSlotIndex !== null) {
+          startTimer();
+          userSlots[activeSlotIndex] = e.target.dataset.op;
+          const nextEmpty = userSlots.findIndex(v => v === '');
+          activeSlotIndex = nextEmpty !== -1 ? nextEmpty : null;
+          $("messageArea").textContent = '';
+          renderBoard();
+        }
+      });
+    });
+
+    $("runBtn").addEventListener('click', () => {
+      if (appState.finished) return;
+      if (userSlots.includes('')) { showMsg('Complete the circuit first.', 'bad'); shakeBoard(); return; }
+
+      const p = dailyPuzzles[appState.level];
+      const userResult = evaluatePlayerEquation(p.template, userSlots);
+
+      if (userResult !== null && userResult === p.target) {
+        playSound('reveal');
+        if (appState.level === 4) {
+          stopTimer();
+          appState.finished = true;
+          saveState();
+          finishGame();
+        } else {
+          showMsg('Connection established.', 'good');
+          $("runBtn").textContent = 'Next Puzzle';
+          $("runBtn").onclick = () => { 
+            appState.level++; saveState(); $("runBtn").onclick = null; initLevel(); 
+          };
+        }
+      } else {
+        playSound('error');
+        showMsg('Short circuit! Logic does not compute.', 'bad');
+        shakeBoard();
+      }
+    });
+
+    function showMsg(txt, cls) { $("messageArea").textContent = txt; $("messageArea").className = `message ${cls}`; }
+    function shakeBoard() { const b = $("equationBoard"); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }
+
+    // --- ENDGAME ---
+    function finishGame() {
+      playSound('win');
+      fireConfetti(); 
+      renderFinishedState();
+      
+      const puzzleNumText = $("puzzleDateTitle").textContent;
+      $("finishCopy").textContent = `You completed ${puzzleNumText} in ${formatTime(elapsed)}.`;
+      $("finishModal").classList.add("open");
+      
+      const playerId = currentPlayerId();
+      const profileName = user?.displayName || "Guest Player";
+      const result = { time: elapsed, at: Date.now(), name: profileName, uid: playerId, photoURL: user?.photoURL || "" };
+      syncResult(result);
+    }
+
+    function renderFinishedState() {
+      $("levelIndicator").textContent = "Systems Operational";
+      $("equationBoard").innerHTML = `<div class="static-token">Circuit Complete</div>`;
+      $("runBtn").style.display = "none";
+      $("gameLeaderboard").style.display = "";
+      $("leaderboardLocked").style.display = "none";
+      document.querySelector('.operator-bank').style.display = 'none';
+      renderLeaderboards();
+    }
+
+    // ==========================================
+    // 5. FIREBASE INTEGRATION
+    // ==========================================
+    let leaderboardUnsub = null;
+    
+    function subscribeLeaderboard() {
+      if (!firebase) return;
+      if (leaderboardUnsub) leaderboardUnsub();
+      
+      const boardId = `circuit-${todayISO}`;
+      const ref = firebase.collection(firebase.db, "leaderboards", boardId, "entries");
+      leaderboardUnsub = firebase.onSnapshot(
+        firebase.query(ref, firebase.orderBy("time", "asc"), firebase.limit(10)),
+        (snap) => {
+          appState.leaderboard = snap.docs.map((d) => d.data());
+          saveState();
+          if (appState.finished) renderLeaderboards();
+        }
+      );
+    }
+
+    async function initFirebase() {
+      try {
+        const [
+          { initializeApp }, { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
+          { getFirestore, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc }
+        ] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
+        ]);
+        const app = initializeApp(FIREBASE_CONFIG);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        firebase = { auth, db, provider, signInWithPopup, signOut, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc };
+
+        onAuthStateChanged(auth, (account) => {
+          user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
+          $("authLabel").textContent = user ? (user.displayName.split(" ")[0]) : "Sign in";
+          subscribeLeaderboard();
+        });
+      } catch (error) { console.warn("Firebase unavailable", error); }
+    }
+
+    $("authBtn").addEventListener("click", async () => {
+      if (!firebase) return;
+      try {
+        if (firebase.auth.currentUser) await firebase.signOut(firebase.auth);
+        else await firebase.signInWithPopup(firebase.auth, firebase.provider);
+      } catch (e) { console.warn(e); }
+    });
+
+    async function syncResult(result) {
+      if (!firebase) return;
+      const boardId = `circuit-${todayISO}`;
+      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", boardId, "entries", result.uid), {
+        ...result, puzzleId: todayISO, game: "circuit", updatedAt: firebase.serverTimestamp()
+      }, { merge: true });
+    }
+
+    function renderLeaderboards() {
+      const escapeHtml = (val) => String(val).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c]));
+      const rows = appState.leaderboard || [];
+      $("gameLeaderboard").innerHTML = rows.length ? rows.map((entry, index) => {
+        const img = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : ``;
+        return `<div class="leader-row"><div class="leader-person"><span style="font-weight: 750; color: var(--muted); margin-right: 6px; width: 18px;">${index + 1}.</span>${img}<div class="leader-name">${escapeHtml(entry.name || "Player")}</div></div><div class="time">${formatTime(entry.time)}</div></div>`;
+      }).join("") : `<div class="small">No finishes yet. Be the first!</div>`;
+    }
+
+    // --- UTILS ---
+    if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
+    $("themeBtn").addEventListener('click', () => { document.body.classList.toggle("dark"); localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light"); });
+    $("closeModalBtn").addEventListener("click", () => $("finishModal").classList.remove("open"));
+    
+    $("shareBtn").addEventListener("click", () => {
+      const puzzleNumText = $("puzzleDateTitle").textContent;
+      const text = `Circuit - ${puzzleNumText}\nI completed today's run in ${formatTime(elapsed)}.\njenishestmoizavut.github.io/BitsPlay/circuit.html - can you do better ;)`;
+      if (navigator.share) navigator.share({ text }).catch(() => {});
+      else { navigator.clipboard?.writeText(text); $("finishCopy").textContent = "Result copied to clipboard."; }
+    });
+
+    // BOOT
+    loadGameSession();
+    initFirebase();
+  </script>
+</body>
+</html>
