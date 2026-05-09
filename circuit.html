@@ -458,7 +458,7 @@
     const $ = (id) => document.getElementById(id);
     const STORAGE_KEY = "circuit_games_v1";
     const THEME_KEY = "daily_games_theme";
-    const todayISO = new Date().toISOString().split('T')[0];
+    const todayISO = toLocalISODate(new Date());
     const escapeHtml = (val) => String(val).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c]));
     
     let firebase = null;
