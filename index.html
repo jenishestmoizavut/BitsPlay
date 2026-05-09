@@ -116,7 +116,7 @@
        <img src="BitsPlay.png" alt="BitsPlay Logo" class="brand-mark" style="background: transparent; object-fit: contain; padding: 2px;">
         <div>
           <h1>BitsPlay</h1>
-          <span style="font-size: 0.65rem; color: var(--muted); font-weight: 600; padding: 2px 6px; background: var(--panel-soft); border-radius: 4px; border: 1px solid var(--line);">v2.0.0</span>
+          <span style="font-size: 0.65rem; color: var(--muted); font-weight: 600; padding: 2px 6px; background: var(--panel-soft); border-radius: 4px; border: 1px solid var(--line);">v2.1.0</span>
           <p>Daily single-player puzzle games.</p>
         </div>
       </div>
@@ -182,7 +182,7 @@
             <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" rel="noopener" class="stat-row project-link">
               <div class="leader-person">
                 <img src="jenish-one.png" alt="jenish.one Logo" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid var(--line);">
-                <div class="leader-name">Jenish.One (Contact for partnerships!)</div>
+                <div class="leader-name">Jenish.One</div>
               </div>
               <span class="small">Hub</span>
             </a>
@@ -223,6 +223,20 @@
             <div class="stat-row"><span>Display name</span><strong id="profileName">Guest Player</strong></div>
             <div class="stat-row"><span>Firebase Status</span><strong id="firebaseStatusText">Offline</strong></div>
           </div>
+          
+          <div class="section-title" style="margin-top: 24px; margin-bottom: 12px;">
+            <h3>Game Stats</h3>
+          </div>
+          <div class="stat-list">
+             <div class="stat-row">
+                <span>ReWorded Streak</span>
+                <strong id="rwStreakPill">0</strong>
+             </div>
+             <div class="stat-row">
+                <span>ReWorded Best Time</span>
+                <strong id="rwBestPill">--:--</strong>
+             </div>
+          </div>
         </section>
         <aside class="side-panel">
           <div class="section-title">
@@ -257,6 +271,35 @@
       document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
     }
 
+    function calculateStats() {
+      const rwState = JSON.parse(localStorage.getItem("daily_games_v1") || "{}");
+      const rwResults = rwState.results || {};
+      const uid = user?.uid || localStorage.getItem("guest_uid") || "guest";
+      
+      const allRwResults = Object.entries(rwResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r);
+      const rwBestTime = allRwResults.length ? Math.min(...allRwResults.map(r => r.time)) : null;
+      
+      const bestEl = $("rwBestPill");
+      if(bestEl) bestEl.textContent = rwBestTime == null ? "--:--" : `${Math.floor(rwBestTime / 60).toString().padStart(2, "0")}:${Math.floor(rwBestTime % 60).toString().padStart(2, "0")}`;
+
+      const todayISO = new Date().toISOString().split('T')[0];
+      let rwStreak = 0; 
+      const cursor = new Date(`${todayISO}T00:00:00`);
+      const toLocalISODate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+      if (!Object.entries(rwResults).some(([k, r]) => k.includes(todayISO) && r?.uid === uid)) {
+          cursor.setDate(cursor.getDate() - 1);
+      }
+      while (true) {
+        if (!Object.entries(rwResults).some(([k, r]) => k.includes(toLocalISODate(cursor)) && r?.uid === uid)) break;
+        rwStreak += 1; 
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      
+      const streakEl = $("rwStreakPill");
+      if(streakEl) streakEl.textContent = String(rwStreak);
+    }
+
     function renderProfile() {
       $("profileName").textContent = user?.displayName || "Guest Player";
       $("profileMode").textContent = user ? "Google account" : "Guest";
@@ -268,26 +311,45 @@
       $("authDesc").textContent = user 
         ? "Your account is linked and your progress is actively backing up to the cloud." 
         : "Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.";
+        
+      calculateStats();
     }
 
     async function initFirebase() {
       try {
         const [
           { initializeApp },
-          { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut }
+          { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
+          { getFirestore, doc, onSnapshot }
         ] = await Promise.all([
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
-          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js")
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
         ]);
         
         const app = initializeApp(FIREBASE_CONFIG);
         const auth = getAuth(app);
+        const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
-        firebase = { auth, provider, signInWithPopup, signOut };
+        firebase = { auth, db, provider, signInWithPopup, signOut, doc, onSnapshot };
 
         onAuthStateChanged(auth, async (account) => {
           user = account ? { uid: account.uid, displayName: account.displayName || "Player" } : null;
           renderProfile();
+
+          if (account && firebase.db) {
+             firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
+                if (docSnap.exists()) {
+                   const data = docSnap.data();
+                   if (data.reworded_results) {
+                      const rwState = JSON.parse(localStorage.getItem("daily_games_v1") || "{}");
+                      rwState.results = { ...(rwState.results || {}), ...data.reworded_results };
+                      localStorage.setItem("daily_games_v1", JSON.stringify(rwState));
+                      calculateStats();
+                   }
+                }
+             });
+          }
         });
       } catch (error) {
         console.warn("Firebase unavailable", error);
