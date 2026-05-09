@@ -313,8 +313,8 @@
 
     const STORAGE_KEY = "daily_games_v1";
     const THEME_KEY = "daily_games_theme";
-    const todayISO = toLocalISODate(new Date());
-    let firebase = null;
+const now = new Date();
+const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;    let firebase = null;
     let appState = loadState();
     let user = appState.user || null;
     let timerHandle = null;
