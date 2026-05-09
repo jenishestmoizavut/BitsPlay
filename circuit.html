@@ -489,13 +489,14 @@
         localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));
       }
       
-      try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        if (parsed.date !== todayISO) throw new Error("New day");
-        return { date: todayISO, level: parsed.level || 0, elapsed: parsed.elapsed || 0, finished: parsed.finished || false, leaderboard: parsed.leaderboard || [] };
-      } catch {
-        return { date: todayISO, level: 0, elapsed: 0, finished: false, leaderboard: [] };
+      let parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      let results = parsed.results || {};
+      let leaderboard = parsed.leaderboard || [];
+
+      if (parsed.date !== todayISO) {
+         return { date: todayISO, level: 0, elapsed: 0, finished: false, leaderboard, results };
       }
+      return { date: todayISO, level: parsed.level || 0, elapsed: parsed.elapsed || 0, finished: parsed.finished || false, leaderboard, results };
     }
 
     function saveState() {
@@ -506,6 +507,7 @@
       if (firebase && user) {
          firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), {
             circuit_state: appState,
+            circuit_results: appState.results,
             updatedAt: firebase.serverTimestamp()
          }, { merge: true });
       }
@@ -631,6 +633,11 @@
       const playerId = currentPlayerId();
       const profileName = user?.displayName || "Guest Player";
       const result = { time: elapsed, at: Date.now(), name: profileName, uid: playerId, photoURL: user?.photoURL || "" };
+      
+      appState.results = appState.results || {};
+      appState.results[`${playerId}::${todayISO}`] = result;
+      saveState();
+
       syncResult(result);
     }
 
@@ -778,7 +785,15 @@
              // Subscribe to Cross-Device real-time sync
              firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
                 if (docSnap.exists()) {
-                   const remote = docSnap.data().circuit_state;
+                   const data = docSnap.data();
+                   
+                   // Merge results history across devices
+                   if (data.circuit_results) {
+                       appState.results = { ...(appState.results || {}), ...data.circuit_results };
+                       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                   }
+
+                   const remote = data.circuit_state;
                    if (remote && remote.date === todayISO) {
                       let needsUpdate = false;
                       if (remote.finished && !appState.finished) needsUpdate = true;
