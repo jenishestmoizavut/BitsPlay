@@ -183,6 +183,7 @@
         <div class="final-action-bar">
           <div class="message" id="messageArea"></div>
           <button class="btn primary" id="runBtn" style="min-width: 120px;">Run Circuit</button>
+          <button class="btn primary" id="persistentShareBtn" type="button" style="display: none; min-width: 120px;">Share Result</button>
         </div>
       </section>
 
@@ -500,6 +501,14 @@
     function saveState() {
       appState.elapsed = elapsed;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      
+      // Real-time Cloud Sync
+      if (firebase && user) {
+         firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), {
+            circuit_state: appState,
+            updatedAt: firebase.serverTimestamp()
+         }, { merge: true });
+      }
     }
 
     const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
@@ -629,6 +638,10 @@
       $("levelIndicator").textContent = "Systems Operational";
       $("equationBoard").innerHTML = `<div class="static-token">Circuit Complete</div>`;
       $("runBtn").style.display = "none";
+      
+      const pShare = $("persistentShareBtn");
+      if (pShare) pShare.style.display = "";
+      
       $("gameLeaderboard").style.display = "";
       $("leaderboardLocked").style.display = "none";
       document.querySelector('.operator-bank').style.display = 'none';
@@ -760,9 +773,34 @@
           $("authLabel").textContent = user ? (user.displayName.split(" ")[0]) : "Sign in";
           subscribeLeaderboard();
           subscribeComments();
+          
+          if (account) {
+             // Subscribe to Cross-Device real-time sync
+             firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
+                if (docSnap.exists()) {
+                   const remote = docSnap.data().circuit_state;
+                   if (remote && remote.date === todayISO) {
+                      let needsUpdate = false;
+                      if (remote.finished && !appState.finished) needsUpdate = true;
+                      if (!appState.finished && remote.level > appState.level) needsUpdate = true;
+                      
+                      if (needsUpdate) {
+                         appState.level = remote.level;
+                         appState.finished = remote.finished;
+                         if (remote.elapsed) appState.elapsed = remote.elapsed;
+                         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                         initLevel();
+                      }
+                   }
+                }
+             });
+          }
         });
       } catch (error) { console.warn("Firebase unavailable", error); }
     }
+
+    // Connect the new persistent share button
+    $("persistentShareBtn")?.addEventListener("click", () => $("shareBtn").click());
 
     $("authBtn").addEventListener("click", async () => {
       if (!firebase) return;
