@@ -776,42 +776,6 @@ function renderComments() {
       }).join("")
     : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
 }
-
-    async function submitComment(event) {
-  event.preventDefault();
-  const text = $("commentInput").value.trim();
-  if (!text || !firebase) return;
-
-  $("commentSubmitBtn").disabled = true;
-  $("commentStatus").textContent = "Posting…";
-  
-  try {
-    const playerId = currentPlayerId();
-    // Unique ID allows multiple comments per user per day
-    const commentId = `circuit_${todayISO}_${playerId}_${Date.now()}`;
-    
-    await firebase.setDoc(firebase.doc(firebase.db, "comments", commentId), {
-      puzzleId: todayISO,
-      uid: playerId,
-      name: user?.displayName || "Guest Player",
-      photoURL: user?.photoURL || "", // Added avatar support
-      text,
-      game: "circuit",
-      createdAtMs: Date.now(),
-      updatedAt: firebase.serverTimestamp()
-    });
-
-    $("commentInput").value = "";
-    $("commentStatus").textContent = "Comment posted!";
-    $("commentStatus").className = "comment-status good";
-    // Redundant loadCloudComments() call removed; the real-time listener handles the update automatically
-  } catch (error) {
-    $("commentStatus").textContent = "Post failed. Try again.";
-    $("commentStatus").className = "comment-status bad";
-  } finally {
-    $("commentSubmitBtn").disabled = false;
-  }
-}
     
     $("commentForm").addEventListener("submit", submitComment);
 
