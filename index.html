@@ -51,7 +51,7 @@
   </script>
 
   <style>
-	:root {
+    :root {
       --bg: #f7f8fb;
       --panel: #ffffff;
       --panel-soft: #f1f5f9;
@@ -752,7 +752,8 @@
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-/* --- BITSPLAY JUICE --- */
+
+    /* --- BITSPLAY JUICE --- */
     @keyframes popReveal {
       0% { transform: scale(0.5) translateY(10px); opacity: 0; }
       50% { transform: scale(1.1) translateY(-2px); }
@@ -768,7 +769,6 @@
     .letter-tile.revealed {
       background: var(--good-soft);
       color: var(--good);
-      /* This makes the letters literally "pop" into place when solved */
       animation: popReveal 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
@@ -776,10 +776,14 @@
       animation: shake 0.4s ease-in-out;
     }
 
-    /* Make the clue rows transition their colors smoothly */
     .clue-row {
       transition: background 0.3s ease, border-color 0.3s ease;
     }
+
+    /* Project Link Hover Logic */
+    .project-link { text-decoration: none; color: inherit; transition: all 0.15s ease; }
+    .project-link:hover { border-color: var(--accent); transform: translateY(-1px); }
+
     @media (max-width: 880px) {
       .hub-layout, .game-layout { grid-template-columns: 1fr; }
       .game-grid { grid-template-columns: 1fr; }
@@ -792,8 +796,8 @@
 
     @media (max-width: 620px) {
       .shell { width: min(100% - 16px, 1180px); padding-top: 16px; padding-bottom: 22px; }
-      .topbar { align-items: flex-start; gap: 10px; }
-      .top-actions { width: 100%; justify-content: flex-start; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .top-actions { width: 100%; justify-content: space-between; margin-top: 10px; }
       .tabs { padding: 10px 0 12px; gap: 6px; }
       .tab { padding: 8px 12px; }
       .hero { padding: 16px; min-height: 0; }
@@ -824,17 +828,6 @@
       .comment-actions { align-items: stretch; }
       .comment-actions .btn { width: 100%; }
     }
-	  @media (max-width: 620px) {
-  .topbar {
-    flex-direction: column; 
-    align-items: flex-start;
-  }
-  .top-actions {
-    width: 100%;
-    justify-content: space-between; /* Spreads buttons out */
-    margin-top: 10px;
-  }
-}
   </style>
 </head>
 <body>
@@ -844,7 +837,7 @@
        <img src="BitsPlay.png" alt="BitsPlay Logo" class="brand-mark" style="background: transparent; object-fit: contain; padding: 2px;">
         <div>
           <h1>BitsPlay</h1>
-<span id="appVersion" style="font-size: 0.65rem; color: var(--muted); font-weight: 600; padding: 2px 6px; background: var(--panel-soft); border-radius: 4px; border: 1px solid var(--line);">v1.0.2</span>
+          <span id="appVersion" style="font-size: 0.65rem; color: var(--muted); font-weight: 600; padding: 2px 6px; background: var(--panel-soft); border-radius: 4px; border: 1px solid var(--line);">v1.0.2</span>
           <p>Daily single-player puzzle games.</p>
         </div>
       </div>
@@ -897,19 +890,22 @@
             </div>
           </div>
 
-<div class="game-grid" aria-label="Games">
+          <div class="game-grid" aria-label="Games">
             <article class="game-card">
               <img src="ReWorded.png" alt="ReWorded Logo" class="game-icon" style="background: transparent; object-fit: contain; padding: 2px;">
               <h3>ReWorded</h3>          
-    <p>Five answer-derived letters; find the missing word!</p>
+              <p>Five answer-derived letters; find the missing word!</p>
               <button class="btn primary" type="button" data-start-game>Play</button>
             </article>
-	<article class="game-card">
-    <img src="Circuit.png" alt="Circuit Logo" class="game-icon" style="background: transparent; object-fit: contain; padding: 2px; border-radius: var(--radius);">
-    <h3>Circuit</h3>
-    <p>Fill the empty slots with the correct operators to complete the logical circuit.</p>
-    <button class="btn primary" type="button" onclick="window.location.href='circuit.html';">Play</button>
-  </article>
+
+            <article class="game-card">
+              <img src="Circuit.png" alt="Circuit Logo" class="game-icon" style="background: transparent; object-fit: contain; padding: 2px; border-radius: var(--radius);">
+              <h3>Circuit</h3>
+              <p>Fill the empty slots with the correct operators to complete the logical circuit.</p>
+              <button class="btn primary" type="button" onclick="window.location.href='circuit.html';">Play</button>
+            </article>
+
+            <article class="game-card locked">
               <div class="game-icon">?</div>
               <h3>Culture Snap</h3>
               <p>A future pop-culture grid with one-minute recall rounds.</p>
@@ -917,15 +913,49 @@
             </article>
           </div>
         </section>
-<aside class="side-panel">
-  <div class="section-title">
-    <h3>Today&apos;s Board</h3>
-    <span class="small" id="todayLabel"></span>
-  </div>
-  <div id="hubLeaderboardLocked" class="leaderboard-locked">Finish the puzzle to see today&apos;s board.</div>
-  <div class="leader-list" id="hubLeaderboard"></div>
-</aside>
-	  </div>
+
+        <aside class="side-panel">
+          <div class="section-title">
+            <h3>Other Projects</h3>
+          </div>
+          <div class="stat-list">
+            
+            <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" rel="noopener" class="stat-row project-link">
+              <div class="leader-person">
+                <div class="game-icon" style="width: 28px; height: 28px; font-size: 0.9rem; background: var(--panel); border: 1px solid var(--line);">🌐</div>
+                <div class="leader-name">jenish.one</div>
+              </div>
+              <span class="small">Hub</span>
+            </a>
+
+            <a href="#" target="_blank" rel="noopener" class="stat-row project-link">
+              <div class="leader-person">
+                <div class="game-icon" style="width: 28px; height: 28px; font-size: 0.9rem; background: var(--panel); border: 1px solid var(--line);">📅</div>
+                <div class="leader-name">Attrack</div>
+              </div>
+              <span class="small">App</span>
+            </a>
+
+            <a href="#" target="_blank" rel="noopener" class="stat-row project-link">
+              <div class="leader-person">
+                <div class="game-icon" style="width: 28px; height: 28px; font-size: 0.9rem; background: var(--panel); border: 1px solid var(--line);">📊</div>
+                <div class="leader-name">Simulating Statistics</div>
+              </div>
+              <span class="small">Site</span>
+            </a>
+
+            <a href="#" target="_blank" rel="noopener" class="stat-row project-link">
+              <div class="leader-person">
+                <div class="game-icon" style="width: 28px; height: 28px; font-size: 0.9rem; background: var(--panel); border: 1px solid var(--line);">📓</div>
+                <div class="leader-name">MemStore</div>
+              </div>
+              <span class="small">App</span>
+            </a>
+
+          </div>
+        </aside>
+
+      </div>
     </section>
 
     <section class="view" id="letterView">
@@ -944,7 +974,7 @@
 
           <div class="letters-board" id="lettersBoard" aria-label="Revealed letters"></div>
           <div class="clues" id="clues"></div>
-<form class="final-answer" id="finalForm">
+          <form class="final-answer" id="finalForm">
             <input id="finalInput" autocomplete="off" maxlength="5" placeholder="Final word" aria-label="Final word" />
             <button class="btn good" type="submit">Submit</button>
             <button class="btn primary" id="persistentShareBtn" type="button" style="display: none;">Share Result</button>
@@ -1011,15 +1041,15 @@
             <div class="stat-row"><span>Current streak</span><strong id="profileStreak">0</strong></div>
           </div>
         </section>
-<aside class="side-panel">
-  <div class="section-title">
-    <h3>Cloud Save</h3>
-    <span class="small" id="firebaseStatus">Offline</span>
-  </div>
-  <p class="small" id="authDesc" style="line-height:1.55;margin:0 0 12px">Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.</p>
-  <button class="btn primary" id="profileAuthBtn" type="button">Sign in with Google</button>
-</aside>
-	  </div>
+        <aside class="side-panel">
+          <div class="section-title">
+            <h3>Cloud Save</h3>
+            <span class="small" id="firebaseStatus">Offline</span>
+          </div>
+          <p class="small" id="authDesc" style="line-height:1.55;margin:0 0 12px">Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.</p>
+          <button class="btn primary" id="profileAuthBtn" type="button">Sign in with Google</button>
+        </aside>
+      </div>
     </section>
   </main>
 
@@ -1042,7 +1072,7 @@
       storageBucket: "bitsplay-c4e24.firebasestorage.app",
       messagingSenderId: "136928912243",
       appId: "1:136928912243:web:8a154edc72b3081184db06",
-	 measurementId: "G-VZCTESNRWM"
+      measurementId: "G-VZCTESNRWM"
     };
 
     const BANK = [
@@ -1157,11 +1187,11 @@
         ]
       }
     ];
-// --- UPGRADED AUDIO ENGINE ---
+
+    // --- UPGRADED AUDIO ENGINE ---
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
 
-    // Unlock audio on the very first tap/click anywhere on the screen
     function unlockAudio() {
       if (!audioCtx) audioCtx = new AudioContext();
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1173,7 +1203,7 @@
 
     function playTone(freq, type, duration, vol = 0.1, delay = 0) {
       try {
-        if (!audioCtx) return; // Wait until unlocked
+        if (!audioCtx) return; 
         if (audioCtx.state === 'suspended') audioCtx.resume();
         
         const osc = audioCtx.createOscillator();
@@ -1182,7 +1212,6 @@
         osc.type = type;
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
         
-        // Smooth Volume Envelope (Stops the ugly clicking sound)
         gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
         gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
@@ -1196,8 +1225,8 @@
 
     function playSound(type) {
       if (type === 'reveal') {
-        playTone(523.25, 'sine', 0.1, 0.05); // High C
-        playTone(659.25, 'sine', 0.15, 0.05, 0.08); // High E
+        playTone(523.25, 'sine', 0.1, 0.05); 
+        playTone(659.25, 'sine', 0.15, 0.05, 0.08); 
       } else if (type === 'win') {
         playTone(440, 'triangle', 0.2, 0.08, 0);
         playTone(554.37, 'triangle', 0.2, 0.08, 0.1);
@@ -1207,7 +1236,9 @@
         playTone(200, 'square', 0.1, 0.03);
         playTone(150, 'square', 0.15, 0.03, 0.1);
       }
-    }    const DAILY_WORDS = [
+    }    
+
+    const DAILY_WORDS = [
       "BRAVE", "GRACE", "PLANT", "CROWN", "SHARP", "NOBLE", "QUEST", "TRACE", "GLORY", "FIELD",
       "SMART", "LIGHT", "BRAIN", "WORLD", "SPARK", "PRIDE", "CLEAR", "DRIVE", "FOCUS", "CHAMP",
       "SOLVE", "TRUST", "MIGHT", "LEARN", "BUILD", "LOGIC", "POINT", "FRESH", "SCORE", "MATCH"
@@ -1243,12 +1274,9 @@
       return `${year}-${month}-${day}`;
     }
 
-    
     function currentPlayerId() {
-  // Use a persistent guest ID from localStorage if not signed in
-  return user?.uid || localStorage.getItem("guest_uid") || "guest";
-	}
-
+      return user?.uid || localStorage.getItem("guest_uid") || "guest";
+    }
 
     function currentSessionKey() {
       return `${currentPlayerId()}::${puzzle?.id || todayISO}`;
@@ -1276,29 +1304,26 @@
       return Object.values(FIREBASE_CONFIG).every(Boolean);
     }
 
-
-function loadState() {
-  try {
-    // Generate a unique ID for guests once and store it forever
-    if (!localStorage.getItem("guest_uid")) {
-      localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));
+    function loadState() {
+      try {
+        if (!localStorage.getItem("guest_uid")) {
+          localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));
+        }
+        
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        return {
+          user: null,
+          results: parsed.results || {},
+          leaderboard: parsed.leaderboard || {},
+          comments: parsed.comments || {},
+          current: parsed.current || { puzzleId: "", clues: [], elapsed: 0, finished: false },
+          currents: parsed.currents || {},
+          profileName: parsed.profileName || "Guest Player"
+        };
+      } catch {
+        return { user: null, results: {}, leaderboard: {}, comments: {}, current: { puzzleId: "", clues: [], elapsed: 0, finished: false }, currents: {}, profileName: "Guest Player" };
+      }
     }
-    
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    return {
-      user: null,
-      results: parsed.results || {},
-      leaderboard: parsed.leaderboard || {},
-      comments: parsed.comments || {},
-      current: parsed.current || { puzzleId: "", clues: [], elapsed: 0, finished: false },
-      currents: parsed.currents || {},
-      profileName: parsed.profileName || "Guest Player"
-    };
-  } catch {
-    return { user: null, results: {}, leaderboard: {}, comments: {}, current: { puzzleId: "", clues: [], elapsed: 0, finished: false }, currents: {}, profileName: "Guest Player" };
-  }
-}
-
 
     function saveState() {
       appState.currents = appState.currents || {};
@@ -1448,7 +1473,6 @@ function loadState() {
         puzzle = cloudPuzzle;
         puzzleSource = cloudPuzzle.source;
         ensureCurrentPuzzle();
-        // Re-subscribe listeners to the new puzzle id
         if (typeof subscribeLeaderboard === "function") subscribeLeaderboard();
         if (typeof subscribeComments === "function") subscribeComments();
         renderPuzzle();
@@ -1475,32 +1499,25 @@ function loadState() {
       saveState();
     }
 
-    
-	  async function setView(viewId) {
-  document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
-  document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
-  if (viewId === "letterView") startTimer();
-  renderPuzzle();
-}
-
+    async function setView(viewId) {
+      document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
+      document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
+      if (viewId === "letterView") startTimer();
+      renderPuzzle();
+    }
 
     function renderPuzzle() {
       ensureCurrentPuzzle();
-	  // Calculate Puzzle Number
       const startDate = new Date("2026-05-06T00:00:00");
       const puzzleDate = new Date(`${todayISO}T00:00:00`);
       const puzzleNumber = Math.max(1, Math.floor((puzzleDate - startDate) / 86400000) + 1);
 
-      // Set titles to Puzzle # instead of the Date
-      $("todayLabel").textContent = `Puzzle #${puzzleNumber}`;
       $("leaderboardDate").textContent = `Puzzle #${puzzleNumber}`;
-// Clean player-facing status
-    $("timer").textContent = formatTime(elapsed);
+      $("timer").textContent = formatTime(elapsed);
       updateHintButton();
       const finished = !!appState.current?.finished;
       $("gameLeaderboard").style.display = finished ? "" : "none";
       $("leaderboardLocked").style.display = finished ? "none" : "";
-      
 
       $("lettersBoard").innerHTML = puzzle.clues.map((clue, index) => {
         const solved = appState.current.clues[index]?.solved;
@@ -1529,11 +1546,9 @@ function loadState() {
         input.addEventListener("input", handleClueInput);
       });
       
-      // Update Final Answer input
       $("finalInput").disabled = finished;
       $("finalInput").value = finished ? puzzle.word : "";
       
-      // Swap the Submit and Share buttons based on game status
       const submitBtn = $("finalForm").querySelector("button[type='submit']");
       const persistentShareBtn = $("persistentShareBtn");
       
@@ -1601,37 +1616,34 @@ function loadState() {
       startHintCooldown();
     }
 
-function handleClueInput(event) {
-  const inputElement = event.target;
-  const index = Number(inputElement.dataset.clue);
-  const value = inputElement.value;
-  appState.current.clues[index].value = value;
+    function handleClueInput(event) {
+      const inputElement = event.target;
+      const index = Number(inputElement.dataset.clue);
+      const value = inputElement.value;
+      appState.current.clues[index].value = value;
 
-  if (normalize(value) === normalize(puzzle.clues[index].answer)) {
-    appState.current.clues[index].solved = true;
-    // Update ONLY this row so focus isn't lost elsewhere
-    inputElement.disabled = true;
-    inputElement.closest('.clue-row').classList.add('solved');
+      if (normalize(value) === normalize(puzzle.clues[index].answer)) {
+        appState.current.clues[index].solved = true;
+        inputElement.disabled = true;
+        inputElement.closest('.clue-row').classList.add('solved');
 
-    playSound('reveal');
-    updateLettersBoardAndProgress(); // Only updates the top tiles and bar
-    saveState();
-  }
-}
+        playSound('reveal');
+        updateLettersBoardAndProgress();
+        saveState();
+      }
+    }
 
-    // --- NEW HELPER FUNCTION ---
     function updateLettersBoardAndProgress() {
-      // Redraw only the top letters
       $("lettersBoard").innerHTML = puzzle.clues.map((clue, index) => {
         const solved = appState.current.clues[index]?.solved;
         return `<div class="letter-tile ${solved ? "revealed" : ""}">${solved ? clue.letter : "?"}</div>`;
       }).join("");
 
-      // Update progress bar
       const solvedCount = appState.current.clues.filter((item) => item.solved).length;
       $("progressText").textContent = `${solvedCount}/5`;
       $("progressFill").style.width = `${(solvedCount / puzzle.clues.length) * 100}%`;
     }
+
     function startTimer() {
       if (appState.current.finished) return;
       if (timerHandle) return;
@@ -1682,15 +1694,9 @@ function handleClueInput(event) {
     function renderLeaderboards() {
       const boardKey = `letter-clues-${puzzle.id}`;
       const rows = appState.leaderboard[boardKey] || [];
-      const finished = !!appState.current?.finished;
       const html = rows.length ? rows.map((entry, index) => leaderRow(entry, index)).join("") : `<div class="small">No finishes yet. Be the first on today&apos;s board.</div>`;
 
-      // Hub leaderboard: only show after the current player has finished
-      $("hubLeaderboardLocked").style.display = finished ? "none" : "";
-      $("hubLeaderboard").style.display = finished ? "" : "none";
-      if (finished) $("hubLeaderboard").innerHTML = html;
-
-      // In-game leaderboard: already gated by leaderboardLocked element
+      // In-game leaderboard
       $("gameLeaderboard").innerHTML = html;
 
       const allResults = currentPlayerResults();
@@ -1699,7 +1705,7 @@ function handleClueInput(event) {
       $("streakPill").textContent = `Streak ${getStreak()}`;
     }
 
-	  function leaderRow(entry, index) {
+    function leaderRow(entry, index) {
       const image = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : ``;
       return `
         <div class="leader-row">
@@ -1847,11 +1853,11 @@ function handleClueInput(event) {
       $("profileStreak").textContent = String(getStreak());
       $("authLabel").textContent = user ? (user.displayName?.split(" ")[0] || "Account") : "Sign in";
       $("profileAuthBtn").textContent = user ? "Sign out" : "Sign in with Google";
-$("firebaseStatus").textContent = user ? "Connected" : "Offline";
-$("firebaseStatus").style.color = user ? "var(--good)" : "var(--muted)";
-$("authDesc").textContent = user 
-  ? "Your account is linked and your progress is actively backing up to the cloud." 
-  : "Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.";
+      $("firebaseStatus").textContent = user ? "Connected" : "Offline";
+      $("firebaseStatus").style.color = user ? "var(--good)" : "var(--muted)";
+      $("authDesc").textContent = user 
+        ? "Your account is linked and your progress is actively backing up to the cloud." 
+        : "Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.";
     }
 
     async function initFirebase() {
@@ -1864,22 +1870,21 @@ $("authDesc").textContent = user
           { initializeApp },
           { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
           { getFirestore, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where },
-	  { getAnalytics }
+          { getAnalytics }
         ] = await Promise.all([
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"),
-	import("https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js") // 
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js") 
         ]);
         const app = initializeApp(FIREBASE_CONFIG);
-const analytics = getAnalytics(app); // <-- INITIALIZE IT HERE
+        const analytics = getAnalytics(app); 
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
         firebase = { auth, db, provider, signInWithPopup, signOut, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where };
         renderProfile();
 
-        // --- REAL-TIME LEADERBOARD LISTENER ---
         let leaderboardUnsub = null;
         function subscribeLeaderboard() {
           if (leaderboardUnsub) leaderboardUnsub();
@@ -1896,7 +1901,6 @@ const analytics = getAnalytics(app); // <-- INITIALIZE IT HERE
           );
         }
 
-        // --- REAL-TIME COMMENTS LISTENER ---
         let commentsUnsub = null;
         function subscribeComments() {
           if (commentsUnsub) commentsUnsub();
@@ -1967,22 +1971,22 @@ const analytics = getAnalytics(app); // <-- INITIALIZE IT HERE
       }
     }
 
-async function syncResult(result) {
-  if (!firebase) return; // Remove the "!user" restriction
-  
-  const boardId = `letter-clues-${puzzle.id}`;
-  const playerId = currentPlayerId(); // Use the persistent unique guest/user ID
-  
-  await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", boardId, "entries", playerId), {
-    ...result,
-    uid: playerId, // Ensure the document is written under their unique ID
-    puzzleId: puzzle.id,
-    game: "letter-clues",
-    updatedAt: firebase.serverTimestamp()
-  }, { merge: true });
-  
-  await loadCloudLeaderboard();
-}
+    async function syncResult(result) {
+      if (!firebase) return; 
+      
+      const boardId = `letter-clues-${puzzle.id}`;
+      const playerId = currentPlayerId(); 
+      
+      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", boardId, "entries", playerId), {
+        ...result,
+        uid: playerId, 
+        puzzleId: puzzle.id,
+        game: "letter-clues",
+        updatedAt: firebase.serverTimestamp()
+      }, { merge: true });
+      
+      await loadCloudLeaderboard();
+    }
 
     async function loadCloudLeaderboard() {
       if (!firebase) return;
@@ -1996,7 +2000,6 @@ async function syncResult(result) {
     function shareResult() {
       const result = appState.results[resultKeyForDate(puzzle.id)];
       
-      // Calculate the puzzle number based on your start date
       const startDate = new Date("2026-05-06T00:00:00");
       const puzzleDate = new Date(`${puzzle.id}T00:00:00`);
       const puzzleNumber = Math.max(1, Math.floor((puzzleDate - startDate) / 86400000) + 1);
@@ -2012,6 +2015,7 @@ async function syncResult(result) {
         $("finishCopy").textContent = "Result copied to clipboard.";
       }
     }
+
     document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
     document.querySelectorAll("[data-view-jump]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.viewJump)));
     document.querySelectorAll("[data-start-game]").forEach((button) => button.addEventListener("click", () => setView("letterView")));
@@ -2025,7 +2029,7 @@ async function syncResult(result) {
     $("shareBtn").addEventListener("click", shareResult);
     $("hintBtn").addEventListener("click", showHint);
     $("commentForm").addEventListener("submit", submitComment);
-  $("finalForm").addEventListener("submit", (event) => {
+    $("finalForm").addEventListener("submit", (event) => {
       event.preventDefault();
       startTimer();
       if (normalize($("finalInput").value) === normalize(puzzle.word)) {
@@ -2040,7 +2044,7 @@ async function syncResult(result) {
         playSound('error'); 
         const inputElement = $("finalInput");
         inputElement.classList.remove("shake");
-        void inputElement.offsetWidth; // Force a browser reflow to restart animation
+        void inputElement.offsetWidth; 
         inputElement.classList.add("shake");
       }
     });
@@ -2052,7 +2056,7 @@ async function syncResult(result) {
     renderPuzzle();
     initFirebase();
   </script>
-<script>
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -2062,4 +2066,4 @@ async function syncResult(result) {
     }
   </script>
 </body>
-</html>	
+</html>
