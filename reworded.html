@@ -329,10 +329,8 @@
 
     function toLocalISODate(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
     function currentPlayerId() { return user?.uid || localStorage.getItem("guest_uid") || "guest"; }
-    
-    // Default to fallback before Firebase connects
-    let puzzleSource = "local";
-    let puzzle = { ...FALLBACK_PUZZLES[0], id: todayISO, clues: [...FALLBACK_PUZZLES[0].clues] };
+    let puzzleSource = "published";
+    let puzzle = null;
     let elapsed = 0;
 
     function loadState() {
@@ -467,15 +465,22 @@ function saveState() {
       $("finalInput").disabled = finished;
       $("finalInput").value = finished ? puzzle.word : "";
       
-      const submitBtn = $("finalForm").querySelector("button[type='submit']");
+     const submitBtn = $("finalForm").querySelector("button[type='submit']");
       const persistentShareBtn = $("persistentShareBtn");
       if (submitBtn) submitBtn.style.display = finished ? "none" : "";
       if (persistentShareBtn) persistentShareBtn.style.display = finished ? "" : "none";
 
-      document.querySelectorAll(".answer-input").forEach(input => input.addEventListener("input", handleClueInput));
+      // START FIX: Bind timer to input focus
+      $("finalInput").addEventListener("focus", startTimer);
+      document.querySelectorAll(".answer-input").forEach(input => {
+        input.addEventListener("focus", startTimer);
+        input.addEventListener("input", handleClueInput);
+      });
+      // END FIX
+
       renderLeaderboards();
       renderComments();
-    }
+    } 
 
     function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c])); }
 
@@ -695,7 +700,7 @@ function saveState() {
     }
 
     function shareResult() {
-      const result = appState.results[resultKeyForDate(puzzle.id)];
+const result = appState.results[`${currentPlayerId()}::${puzzle.id}`];
       const puzzleNumber = Math.max(1, Math.floor((new Date(`${puzzle.id}T00:00:00`) - new Date("2026-05-06T00:00:00")) / 86400000) + 1);
       const text = result ? `BitsPlay - ReWorded #${puzzleNumber}\nIt took me ${formatTime(result.time)} to solve today's ReWorded puzzle, let me know how long you took! \njenishestmoizavut.github.io/BitsPlay/reworded.html` : "BitsPlay - ReWorded\njenishestmoizavut.github.io/BitsPlay/reworded.html";
       if (navigator.share) navigator.share({ text }).catch(() => {}); else { navigator.clipboard?.writeText(text); $("finishCopy").textContent = "Result copied to clipboard."; }
@@ -720,7 +725,7 @@ function saveState() {
     if ($("persistentShareBtn")) $("persistentShareBtn").addEventListener("click", shareResult);
     window.addEventListener("beforeunload", stopTimer);
     if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
-    ensureCurrentPuzzle(); renderPuzzle(); initFirebase();
+    initFirebase(); // ensureCurrentPuzzle and renderPuzzle are safely called inside loadCloudPuzzle()
   </script>
 </body>
 </html>
