@@ -236,6 +236,14 @@
                 <span>ReWorded Best Time</span>
                 <strong id="rwBestPill">--:--</strong>
              </div>
+             <div class="stat-row">
+                <span>Circuit Streak</span>
+                <strong id="cirStreakPill">0</strong>
+             </div>
+             <div class="stat-row">
+                <span>Circuit Best Time</span>
+                <strong id="cirBestPill">--:--</strong>
+             </div>
           </div>
         </section>
         <aside class="side-panel">
@@ -274,18 +282,23 @@
     function calculateStats() {
       const rwState = JSON.parse(localStorage.getItem("daily_games_v1") || "{}");
       const rwResults = rwState.results || {};
-      const uid = user?.uid || localStorage.getItem("guest_uid") || "guest";
       
+      const cirState = JSON.parse(localStorage.getItem("circuit_games_v1") || "{}");
+      const cirResults = cirState.results || {};
+
+      const uid = user?.uid || localStorage.getItem("guest_uid") || "guest";
+      const todayISO = new Date().toISOString().split('T')[0];
+      const toLocalISODate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+      // ReWorded Stats
       const allRwResults = Object.entries(rwResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r);
       const rwBestTime = allRwResults.length ? Math.min(...allRwResults.map(r => r.time)) : null;
       
       const bestEl = $("rwBestPill");
       if(bestEl) bestEl.textContent = rwBestTime == null ? "--:--" : `${Math.floor(rwBestTime / 60).toString().padStart(2, "0")}:${Math.floor(rwBestTime % 60).toString().padStart(2, "0")}`;
 
-      const todayISO = new Date().toISOString().split('T')[0];
       let rwStreak = 0; 
       const cursor = new Date(`${todayISO}T00:00:00`);
-      const toLocalISODate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
       if (!Object.entries(rwResults).some(([k, r]) => k.includes(todayISO) && r?.uid === uid)) {
           cursor.setDate(cursor.getDate() - 1);
@@ -295,9 +308,30 @@
         rwStreak += 1; 
         cursor.setDate(cursor.getDate() - 1);
       }
-      
       const streakEl = $("rwStreakPill");
       if(streakEl) streakEl.textContent = String(rwStreak);
+
+
+      // Circuit Stats
+      const allCirResults = Object.entries(cirResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r);
+      const cirBestTime = allCirResults.length ? Math.min(...allCirResults.map(r => r.time)) : null;
+      
+      const cBestEl = $("cirBestPill");
+      if(cBestEl) cBestEl.textContent = cirBestTime == null ? "--:--" : `${Math.floor(cirBestTime / 60).toString().padStart(2, "0")}:${Math.floor(cirBestTime % 60).toString().padStart(2, "0")}`;
+
+      let cirStreak = 0; 
+      const cCursor = new Date(`${todayISO}T00:00:00`);
+
+      if (!Object.entries(cirResults).some(([k, r]) => k.includes(todayISO) && r?.uid === uid)) {
+          cCursor.setDate(cCursor.getDate() - 1);
+      }
+      while (true) {
+        if (!Object.entries(cirResults).some(([k, r]) => k.includes(toLocalISODate(cCursor)) && r?.uid === uid)) break;
+        cirStreak += 1; 
+        cCursor.setDate(cCursor.getDate() - 1);
+      }
+      const cStreakEl = $("cirStreakPill");
+      if(cStreakEl) cStreakEl.textContent = String(cirStreak);
     }
 
     function renderProfile() {
@@ -341,12 +375,22 @@
              firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
                 if (docSnap.exists()) {
                    const data = docSnap.data();
+                   
+                   // Pull ReWorded History
                    if (data.reworded_results) {
                       const rwState = JSON.parse(localStorage.getItem("daily_games_v1") || "{}");
                       rwState.results = { ...(rwState.results || {}), ...data.reworded_results };
                       localStorage.setItem("daily_games_v1", JSON.stringify(rwState));
-                      calculateStats();
                    }
+
+                   // Pull Circuit History
+                   if (data.circuit_results) {
+                      const cirState = JSON.parse(localStorage.getItem("circuit_games_v1") || "{}");
+                      cirState.results = { ...(cirState.results || {}), ...data.circuit_results };
+                      localStorage.setItem("circuit_games_v1", JSON.stringify(cirState));
+                   }
+
+                   calculateStats();
                 }
              });
           }
