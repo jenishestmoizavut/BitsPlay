@@ -688,6 +688,7 @@
 
 // 1. IMPROVED SUBMIT: Uses a unique ID (Timestamp + UID) so users can post multiple times
 async function submitComment(event) {
+  
   event.preventDefault();
   const text = $("commentInput").value.trim();
   if (!text || !firebase) return;
