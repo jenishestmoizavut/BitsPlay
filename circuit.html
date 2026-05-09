@@ -83,7 +83,25 @@
     .message { grid-column: 1 / -1; min-height: 20px; color: var(--muted); font-size: 0.86rem; font-weight: 700; }
     .message.good { color: var(--good); }
     .message.bad { color: var(--bad); }
-
+/* --- COMMENT SECTION STYLES --- */
+    .postgame-panel { display: none; margin-top: 14px; }
+    .postgame-panel.visible { display: block; animation: fadeUp 0.22s ease-out both; }
+    .comment-form { display: grid; gap: 10px; }
+    .comment-textarea { width: 100%; min-height: 104px; resize: vertical; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel-soft); color: var(--text); padding: 12px; outline: 0; line-height: 1.45; }
+    .comment-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
+    .comment-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .comment-status { min-height: 18px; color: var(--muted); font-size: 0.8rem; }
+    .comment-status.good { color: var(--good); font-weight: 700; }
+    .comment-status.bad { color: var(--bad); font-weight: 700; }
+    .comment-list { display: grid; gap: 8px; margin-top: 12px; }
+    .comment-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-soft); padding: 10px 12px; }
+    .comment-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: var(--muted); font-size: 0.76rem; }
+    .comment-body { white-space: pre-wrap; line-height: 1.45; color: var(--text); font-size: 0.9rem; }
+    
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-5px); }
@@ -107,6 +125,7 @@
       .equation-board { font-size: 1.5rem; gap: 8px; }
       .slot { width: 40px; height: 40px; }
     }
+    
   </style>
 </head>
 <body>
@@ -177,6 +196,21 @@
         </section>
       </aside>
     </div>
+    </div> <section class="side-panel postgame-panel" id="commentPanel">
+      <div class="section-title">
+        <h3>Comment</h3>
+        <span class="small" id="commentMeta">After your run</span>
+      </div>
+      <form class="comment-form" id="commentForm">
+        <textarea class="comment-textarea" id="commentInput" maxlength="280" placeholder="How did today's circuit feel?"></textarea>
+        <div class="comment-actions">
+          <div class="comment-status" id="commentStatus"></div>
+          <button class="btn primary" id="commentSubmitBtn" type="submit">Post comment</button>
+        </div>
+      </form>
+      <div class="comment-list" id="commentList"></div>
+    </section>
+  </main>
   </main>
 
   <div class="modal-backdrop" id="finishModal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
@@ -431,6 +465,8 @@
     let activeSlotIndex = null;
     let timerHandle = null;
     let elapsed = 0;
+    let cloudComments = [];
+const escapeHtml = (val) => String(val).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c]));
     let startedAt = null;
 
     function currentPlayerId() {
@@ -595,6 +631,7 @@
       $("leaderboardLocked").style.display = "none";
       document.querySelector('.operator-bank').style.display = 'none';
       renderLeaderboards();
+      renderComments(); // <-- ADD THIS LINE
     }
 
     // ==========================================
@@ -617,7 +654,21 @@
         }
       );
     }
-
+let commentsUnsub = null;
+        function subscribeComments() {
+          if (commentsUnsub) commentsUnsub();
+          const ref = firebase.collection(firebase.db, "comments");
+          commentsUnsub = firebase.onSnapshot(
+            firebase.query(ref, firebase.where("puzzleId", "==", todayISO), firebase.where("game", "==", "circuit"), firebase.orderBy("createdAtMs", "desc"), firebase.limit(50)),
+            (snap) => {
+              cloudComments = snap.docs.map((d) => {
+                const entry = d.data();
+                return { uid: entry.uid, name: entry.name || "Player", text: entry.text || "", createdAt: entry.createdAtMs || 0, dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" };
+              });
+              renderComments();
+            }
+          );
+        }
     async function initFirebase() {
       try {
         const [
@@ -638,6 +689,7 @@
           user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
           $("authLabel").textContent = user ? (user.displayName.split(" ")[0]) : "Sign in";
           subscribeLeaderboard();
+          subscribeComments();
         });
       } catch (error) { console.warn("Firebase unavailable", error); }
     }
@@ -666,6 +718,70 @@
         return `<div class="leader-row"><div class="leader-person"><span style="font-weight: 750; color: var(--muted); margin-right: 6px; width: 18px;">${index + 1}.</span>${img}<div class="leader-name">${escapeHtml(entry.name || "Player")}</div></div><div class="time">${formatTime(entry.time)}</div></div>`;
       }).join("") : `<div class="small">No finishes yet. Be the first!</div>`;
     }
+    // --- COMMENT LOGIC ---
+    function visibleComments() {
+      return cloudComments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    }
+
+    async function loadCloudComments() {
+      if (!firebase) { cloudComments = []; return; }
+      try {
+        const ref = firebase.collection(firebase.db, "comments");
+        const snap = await firebase.getDocs(
+          firebase.query(ref, firebase.where("puzzleId", "==", todayISO), firebase.where("game", "==", "circuit"), firebase.orderBy("createdAtMs", "desc"), firebase.limit(50))
+        );
+        cloudComments = snap.docs.map((doc) => {
+          const entry = doc.data();
+          return { uid: entry.uid, name: entry.name || "Player", text: entry.text || "", createdAt: entry.createdAtMs || 0, dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" };
+        });
+      } catch (error) { console.warn("Comment feed unavailable", error); cloudComments = []; }
+    }
+
+    function renderComments() {
+      const panel = $("commentPanel");
+      if (!panel) return;
+      const finished = !!appState.finished;
+      panel.classList.toggle("visible", finished);
+      $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";
+      $("commentInput").disabled = !finished;
+      $("commentSubmitBtn").disabled = !finished;
+      if (!finished) { $("commentStatus").textContent = ""; $("commentStatus").className = "comment-status"; }
+
+      const comments = visibleComments();
+      $("commentList").innerHTML = comments.length
+        ? comments.map((entry) => `
+          <article class="comment-card">
+            <div class="comment-meta"><span>${escapeHtml(entry.name || "Player")}</span><span>${escapeHtml(entry.dateLabel || "")}</span></div>
+            <div class="comment-body">${escapeHtml(entry.text || "")}</div>
+          </article>
+        `).join("")
+        : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
+    }
+
+    async function submitComment(event) {
+      event.preventDefault();
+      const text = $("commentInput").value.trim();
+      if (!text) return;
+      if (!firebase) { $("commentStatus").textContent = "Firebase not available."; $("commentStatus").className = "comment-status bad"; return; }
+      $("commentSubmitBtn").disabled = true;
+      $("commentStatus").textContent = "Posting…";
+      $("commentStatus").className = "comment-status";
+      try {
+        const playerId = currentPlayerId();
+        await firebase.setDoc(firebase.doc(firebase.db, "comments", `circuit_${todayISO}_${playerId}`), {
+          puzzleId: todayISO, uid: playerId, name: user?.displayName || "Guest Player", text, game: "circuit", createdAtMs: Date.now(), updatedAt: firebase.serverTimestamp()
+        }, { merge: true });
+        $("commentInput").value = "";
+        $("commentStatus").textContent = "Comment posted!";
+        $("commentStatus").className = "comment-status good";
+        await loadCloudComments();
+        renderComments();
+      } catch (error) {
+        $("commentStatus").textContent = "Post failed. Try again."; $("commentStatus").className = "comment-status bad";
+      } finally { $("commentSubmitBtn").disabled = false; }
+    }
+    
+    $("commentForm").addEventListener("submit", submitComment);
 
     // --- UTILS ---
     if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
