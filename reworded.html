@@ -589,40 +589,77 @@ function saveState() {
       $("streakPill").textContent = `Streak ${streak}`;
     }
 
-    function renderComments() {
-      const panel = $("commentPanel");
-      const finished = !!appState.current?.finished;
-      panel.classList.toggle("visible", finished);
-      $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";
-      $("commentInput").disabled = !finished; $("commentSubmitBtn").disabled = !finished;
-      if (!finished) { $("commentStatus").textContent = ""; $("commentStatus").className = "comment-status"; }
+function renderComments() {
+  const panel = $("commentPanel");
+  const finished = !!appState.current?.finished;
+  panel.classList.toggle("visible", finished);
+  
+  $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";
+  $("commentInput").disabled = !finished; 
+  $("commentSubmitBtn").disabled = !finished;
 
-      const merged = new Map();
-      [...cloudComments, ...((appState.comments && appState.comments[`comments::${puzzle.id}`]) ? appState.comments[`comments::${puzzle.id}`] : [])].forEach(entry => { if (entry && entry.uid) merged.set(entry.uid, entry); });
-      const comments = Array.from(merged.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const merged = new Map();
+  [...cloudComments].forEach(entry => { 
+    if (entry && entry.uid) merged.set(entry.uid, entry); 
+  });
+  
+  const comments = Array.from(merged.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-      $("commentList").innerHTML = comments.length ? comments.map(entry => `
-        <article class="comment-card">
-          <div class="comment-meta"><span>${escapeHtml(entry.name || "Player")}</span><span>${escapeHtml(entry.dateLabel || "")}</span></div>
-          <div class="comment-body">${escapeHtml(entry.text || "")}</div>
-        </article>
-      `).join("") : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
-    }
+  $("commentList").innerHTML = comments.length ? comments.map(entry => {
+    // Generate the avatar HTML (uses a placeholder div if no photo exists)
+    const avatarImg = entry.photoURL 
+      ? `<img src="${entry.photoURL}" class="avatar" style="width:20px; height:20px; margin-right:6px;">` 
+      : `<div class="avatar" style="width:20px; height:20px; margin-right:6px; background:var(--line); display:inline-block;"></div>`;
+
+    return `
+      <article class="comment-card">
+        <div class="comment-meta">
+          <span style="display:flex; align-items:center;">
+            ${avatarImg} 
+            <strong>${escapeHtml(entry.name)}</strong>
+          </span>
+          <span>${escapeHtml(entry.dateLabel || "")}</span>
+        </div>
+        <div class="comment-body">${escapeHtml(entry.text || "")}</div>
+      </article>
+    `;
+  }).join("") : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
+}
 
     async function submitComment(event) {
-      event.preventDefault(); const text = $("commentInput").value.trim();
-      if (!text) return;
-      if (!firebase) { $("commentStatus").textContent = "Firebase not available."; $("commentStatus").className = "comment-status bad"; return; }
-      $("commentSubmitBtn").disabled = true; $("commentStatus").textContent = "Posting…"; $("commentStatus").className = "comment-status";
-      try {
-        await firebase.setDoc(firebase.doc(firebase.db, "comments", `${puzzle.id}_${currentPlayerId()}`), {
-          puzzleId: puzzle.id, uid: currentPlayerId(), name: user?.displayName || appState.profileName || "Guest Player",
-          text, game: "reworded", createdAtMs: Date.now(), updatedAt: firebase.serverTimestamp()
-        }, { merge: true });
-        $("commentInput").value = ""; $("commentStatus").textContent = "Comment posted!"; $("commentStatus").className = "comment-status good";
-      } catch (error) { $("commentStatus").textContent = "Post failed. Try again."; $("commentStatus").className = "comment-status bad"; } 
-      finally { $("commentSubmitBtn").disabled = false; }
-    }
+  event.preventDefault(); 
+  const text = $("commentInput").value.trim();
+  if (!text) return;
+  if (!firebase) return;
+
+  $("commentSubmitBtn").disabled = true; 
+  $("commentStatus").textContent = "Posting…";
+
+  try {
+    // Uses a unique ID based on game, date, and user to prevent intermixing
+    const commentId = `reworded_${todayISO}_${currentPlayerId()}`;
+    
+    await firebase.setDoc(firebase.doc(firebase.db, "comments", commentId), {
+      puzzleId: todayISO,
+      uid: currentPlayerId(),
+      name: user?.displayName || appState.profileName || "Guest Player",
+      photoURL: user?.photoURL || "", // <--- Sends your avatar URL to the cloud
+      text,
+      game: "reworded",
+      createdAtMs: Date.now(),
+      updatedAt: firebase.serverTimestamp()
+    }, { merge: true });
+
+    $("commentInput").value = ""; 
+    $("commentStatus").textContent = "Comment posted!";
+    $("commentStatus").className = "comment-status good";
+  } catch (error) { 
+    $("commentStatus").textContent = "Post failed. Try again."; 
+    $("commentStatus").className = "comment-status bad"; 
+  } finally { 
+    $("commentSubmitBtn").disabled = false; 
+  }
+}
 
     function renderProfile() {
       const authLabel = document.getElementById("authLabel");
@@ -675,11 +712,18 @@ function saveState() {
                 }
              });
 
-             firebase.onSnapshot(firebase.query(firebase.collection(firebase.db, "leaderboards", `letter-clues-${todayISO}`, "entries"), firebase.orderBy("time", "asc"), firebase.limit(10)), (snap) => {
-              appState.leaderboard[`letter-clues-${todayISO}`] = snap.docs.map(d => d.data()); saveState(); renderLeaderboards();
+firebase.onSnapshot(firebase.query(
+  firebase.collection(firebase.db, "comments"), 
+  firebase.where("puzzleId", "==", todayISO),
+  firebase.where("game", "==", "reworded"), // <--- Add this filter
+  firebase.orderBy("createdAtMs", "desc"), 
+  firebase.limit(50)
+), (snap) => {
+  // logic remains same
+appState.leaderboard[`letter-clues-${todayISO}`] = snap.docs.map(d => d.data()); saveState(); renderLeaderboards();
             });
             firebase.onSnapshot(firebase.query(firebase.collection(firebase.db, "comments"), firebase.where("puzzleId", "==", todayISO), firebase.orderBy("createdAtMs", "desc"), firebase.limit(50)), (snap) => {
-              cloudComments = snap.docs.map(d => { const entry = d.data(); return { uid: entry.uid, name: entry.name || "Player", text: entry.text || "", createdAt: entry.createdAtMs || 0, dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" }; });
+              cloudComments = snap.docs.map(d => { const entry = d.data(); return { uid: entry.uid, name: entry.name || "Player",photoURL: entry.photoURL || "", // <--- Add this line to capture the avatar text: entry.text || "", createdAt: entry.createdAtMs || 0, dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" }; });
               renderComments();
             });
           }
