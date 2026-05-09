@@ -683,49 +683,135 @@
       } catch (error) { console.warn("Comment feed unavailable", error); cloudComments = []; }
     }
 
-    function renderComments() {
-      const panel = $("commentPanel");
-      if (!panel) return;
-      const finished = !!appState.finished;
-      panel.classList.toggle("visible", finished);
-      $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";
-      $("commentInput").disabled = !finished;
-      $("commentSubmitBtn").disabled = !finished;
-      if (!finished) { $("commentStatus").textContent = ""; $("commentStatus").className = "comment-status"; }
+// 1. IMPROVED SUBMIT: Uses a unique ID (Timestamp + UID) so users can post multiple times
+async function submitComment(event) {
+  event.preventDefault();
+  const text = $("commentInput").value.trim();
+  if (!text || !firebase) return;
 
-      const comments = visibleComments();
-      $("commentList").innerHTML = comments.length
-        ? comments.map((entry) => `
+  $("commentSubmitBtn").disabled = true;
+  $("commentStatus").textContent = "Posting…";
+  
+  try {
+    const playerId = currentPlayerId();
+    // Unique ID allows multiple comments per user per day
+    const commentId = `circuit_${todayISO}_${playerId}_${Date.now()}`;
+    
+    await firebase.setDoc(firebase.doc(firebase.db, "comments", commentId), {
+      puzzleId: todayISO,
+      uid: playerId,
+      name: user?.displayName || "Guest Player",
+      photoURL: user?.photoURL || "", // Added avatar support
+      text,
+      game: "circuit",
+      createdAtMs: Date.now(),
+      updatedAt: firebase.serverTimestamp()
+    });
+
+    $("commentInput").value = "";
+    $("commentStatus").textContent = "Comment posted!";
+    $("commentStatus").className = "comment-status good";
+    // Redundant loadCloudComments() call removed; the real-time listener handles the update automatically
+  } catch (error) {
+    $("commentStatus").textContent = "Post failed. Try again.";
+    $("commentStatus").className = "comment-status bad";
+  } finally {
+    $("commentSubmitBtn").disabled = false;
+  }
+}
+
+// 2. IMPROVED LISTENER: Pulls avatar data from the cloud
+function subscribeComments() {
+  if (!firebase) return;
+  if (commentsUnsub) commentsUnsub();
+  
+  const ref = firebase.collection(firebase.db, "comments");
+  const q = firebase.query(
+    ref, 
+    firebase.where("puzzleId", "==", todayISO), 
+    firebase.where("game", "==", "circuit"), 
+    firebase.orderBy("createdAtMs", "desc"), 
+    firebase.limit(50)
+  );
+
+  commentsUnsub = firebase.onSnapshot(q, (snap) => {
+    cloudComments = snap.docs.map((d) => {
+      const entry = d.data();
+      return { 
+        uid: entry.uid, 
+        name: entry.name || "Player", 
+        photoURL: entry.photoURL || "", // Store the photo
+        text: entry.text || "", 
+        createdAt: entry.createdAtMs || 0, 
+        dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" 
+      };
+    });
+    renderComments();
+  });
+}
+
+// 3. IMPROVED RENDER: Displays the user's avatar next to their comment
+function renderComments() {
+  const panel = $("commentPanel");
+  if (!panel) return;
+  const finished = !!appState.finished;
+  panel.classList.toggle("visible", finished);
+  
+  const comments = cloudComments; // Already sorted by Firebase query
+  $("commentList").innerHTML = comments.length
+    ? comments.map((entry) => {
+        const avatarImg = entry.photoURL 
+          ? `<img src="${entry.photoURL}" class="avatar" style="width:20px; height:20px; margin-right:6px;">` 
+          : `<div class="avatar" style="width:20px; height:20px; margin-right:6px; background:var(--line); display:inline-block;"></div>`;
+        
+        return `
           <article class="comment-card">
-            <div class="comment-meta"><span>${escapeHtml(entry.name || "Player")}</span><span>${escapeHtml(entry.dateLabel || "")}</span></div>
-            <div class="comment-body">${escapeHtml(entry.text || "")}</div>
+            <div class="comment-meta">
+              <span style="display:flex; align-items:center;">${avatarImg} <strong>${escapeHtml(entry.name)}</strong></span>
+              <span>${escapeHtml(entry.dateLabel)}</span>
+            </div>
+            <div class="comment-body">${escapeHtml(entry.text)}</div>
           </article>
-        `).join("")
-        : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
-    }
+        `;
+      }).join("")
+    : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
+}
 
     async function submitComment(event) {
-      event.preventDefault();
-      const text = $("commentInput").value.trim();
-      if (!text) return;
-      if (!firebase) { $("commentStatus").textContent = "Firebase not available."; $("commentStatus").className = "comment-status bad"; return; }
-      $("commentSubmitBtn").disabled = true;
-      $("commentStatus").textContent = "Posting…";
-      $("commentStatus").className = "comment-status";
-      try {
-        const playerId = currentPlayerId();
-        await firebase.setDoc(firebase.doc(firebase.db, "comments", `circuit_${todayISO}_${playerId}`), {
-          puzzleId: todayISO, uid: playerId, name: user?.displayName || "Guest Player", text, game: "circuit", createdAtMs: Date.now(), updatedAt: firebase.serverTimestamp()
-        }, { merge: true });
-        $("commentInput").value = "";
-        $("commentStatus").textContent = "Comment posted!";
-        $("commentStatus").className = "comment-status good";
-        await loadCloudComments();
-        renderComments();
-      } catch (error) {
-        $("commentStatus").textContent = "Post failed. Try again."; $("commentStatus").className = "comment-status bad";
-      } finally { $("commentSubmitBtn").disabled = false; }
-    }
+  event.preventDefault();
+  const text = $("commentInput").value.trim();
+  if (!text || !firebase) return;
+
+  $("commentSubmitBtn").disabled = true;
+  $("commentStatus").textContent = "Posting…";
+  
+  try {
+    const playerId = currentPlayerId();
+    // Unique ID allows multiple comments per user per day
+    const commentId = `circuit_${todayISO}_${playerId}_${Date.now()}`;
+    
+    await firebase.setDoc(firebase.doc(firebase.db, "comments", commentId), {
+      puzzleId: todayISO,
+      uid: playerId,
+      name: user?.displayName || "Guest Player",
+      photoURL: user?.photoURL || "", // Added avatar support
+      text,
+      game: "circuit",
+      createdAtMs: Date.now(),
+      updatedAt: firebase.serverTimestamp()
+    });
+
+    $("commentInput").value = "";
+    $("commentStatus").textContent = "Comment posted!";
+    $("commentStatus").className = "comment-status good";
+    // Redundant loadCloudComments() call removed; the real-time listener handles the update automatically
+  } catch (error) {
+    $("commentStatus").textContent = "Post failed. Try again.";
+    $("commentStatus").className = "comment-status bad";
+  } finally {
+    $("commentSubmitBtn").disabled = false;
+  }
+}
     
     $("commentForm").addEventListener("submit", submitComment);
 
@@ -751,21 +837,34 @@
       );
     }
 
-    function subscribeComments() {
-      if (!firebase) return;
-      if (commentsUnsub) commentsUnsub();
-      const ref = firebase.collection(firebase.db, "comments");
-      commentsUnsub = firebase.onSnapshot(
-        firebase.query(ref, firebase.where("puzzleId", "==", todayISO), firebase.where("game", "==", "circuit"), firebase.orderBy("createdAtMs", "desc"), firebase.limit(50)),
-        (snap) => {
-          cloudComments = snap.docs.map((d) => {
-            const entry = d.data();
-            return { uid: entry.uid, name: entry.name || "Player", text: entry.text || "", createdAt: entry.createdAtMs || 0, dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" };
-          });
-          renderComments();
-        }
-      );
-    }
+function subscribeComments() {
+  if (!firebase) return;
+  if (commentsUnsub) commentsUnsub();
+  
+  const ref = firebase.collection(firebase.db, "comments");
+  const q = firebase.query(
+    ref, 
+    firebase.where("puzzleId", "==", todayISO), 
+    firebase.where("game", "==", "circuit"), 
+    firebase.orderBy("createdAtMs", "desc"), 
+    firebase.limit(50)
+  );
+
+  commentsUnsub = firebase.onSnapshot(q, (snap) => {
+    cloudComments = snap.docs.map((d) => {
+      const entry = d.data();
+      return { 
+        uid: entry.uid, 
+        name: entry.name || "Player", 
+        photoURL: entry.photoURL || "", // Store the photo
+        text: entry.text || "", 
+        createdAt: entry.createdAtMs || 0, 
+        dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" 
+      };
+    });
+    renderComments();
+  });
+}
 
     async function initFirebase() {
       try {
