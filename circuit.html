@@ -66,7 +66,6 @@
     .avatar { width: 28px; height: 28px; border-radius: 999px; object-fit: cover; border: 1px solid var(--line); }
 
     /* --- CIRCUIT SPECIFIC STYLES --- */
-    .circuit-board { padding: 40px 18px; text-align: center; }
     .level-indicator { color: var(--muted); font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; display: flex; justify-content: center; max-width: 500px; margin-left: auto; margin-right: auto; }
     .equation-board { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 40px; font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
     .static-token { color: var(--text); }
@@ -118,6 +117,15 @@
     .modal h2 { margin: 0 0 8px; }
     .modal p { color: var(--soft); line-height: 1.5; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+    /* --- PLAY OVERLAY --- */
+    .play-overlay { position: absolute; inset: 0; background: color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 10; border-radius: var(--radius); }
+    .play-overlay.hidden { display: none; }
+    .play-btn { width: 72px; height: 72px; border-radius: 50%; background: var(--accent); border: none; display: grid; place-items: center; cursor: pointer; box-shadow: 0 8px 28px rgba(37,99,235,0.35); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .play-btn:hover { transform: scale(1.08); box-shadow: 0 12px 36px rgba(37,99,235,0.45); }
+    .play-btn svg { margin-left: 4px; }
+    .play-overlay p { color: var(--soft); font-size: 0.88rem; font-weight: 600; margin: 0; }
+    .circuit-board { position: relative; padding: 40px 18px; text-align: center; }
 
     /* --- NEXT GAME CARDS --- */
     .next-games { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
@@ -175,6 +183,12 @@
         </div>
 
         <div class="circuit-board">
+          <div class="play-overlay hidden" id="playOverlay">
+            <button class="play-btn" id="playBtn" aria-label="Start game">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+            </button>
+            <p>Press Play to start the timer</p>
+          </div>
           <div class="level-indicator">
             <span id="levelIndicator">Puzzle 1 of 5</span>
           </div>
@@ -500,7 +514,8 @@
     let timerHandle = null;
     let elapsed = 0;
     let startedAt = null;
-    let lastSyncTime = -1; // Fix #3: Prevents interval spam to Firebase
+    let lastSyncTime = -1;
+    let gameStarted = false; // true once the player hits Play
     let cloudComments = [];
     let leaderboardUnsub = null;
     let commentsUnsub = null;
@@ -550,71 +565,93 @@
 
     function startTimer() {
       if (appState.finished || timerHandle) return;
-      // Always anchor startedAt from the saved elapsed so mobile reloads resume correctly
       startedAt = Date.now() - elapsed * 1000;
       timerHandle = setInterval(() => {
         elapsed = Math.floor((Date.now() - startedAt) / 1000);
         $("timer").textContent = formatTime(elapsed);
-        
-        // Fix #3: Ensure it only triggers once per 5 seconds, not 4 times
         if (elapsed > 0 && elapsed % 5 === 0 && elapsed !== lastSyncTime) {
-           lastSyncTime = elapsed;
-           saveState();
+          lastSyncTime = elapsed;
+          saveState();
         }
       }, 250);
     }
 
-    // Visibility change handler: pause/resume timer when tab/app goes background on mobile
+    function stopTimer() {
+      if (timerHandle) clearInterval(timerHandle);
+      timerHandle = null;
+      saveState();
+    }
+
+    // Keep timer alive across tab switches on mobile — re-anchor startedAt on return
     document.addEventListener("visibilitychange", () => {
-      if (appState.finished) return;
-      if (document.hidden) {
-        // Page going background: stop interval but save current elapsed
-        if (timerHandle) { clearInterval(timerHandle); timerHandle = null; saveState(); }
-      } else {
-        // Page coming back: re-anchor startedAt from saved elapsed and restart
-        if (!timerHandle && !appState.finished && appState.level > 0 || elapsed > 0) {
-          startedAt = Date.now() - elapsed * 1000;
-          timerHandle = setInterval(() => {
-            elapsed = Math.floor((Date.now() - startedAt) / 1000);
-            $("timer").textContent = formatTime(elapsed);
-            if (elapsed > 0 && elapsed % 5 === 0 && elapsed !== lastSyncTime) {
-              lastSyncTime = elapsed;
-              saveState();
-            }
-          }, 250);
-        }
+      if (appState.finished || !gameStarted) return;
+      if (!document.hidden && !timerHandle) {
+        // Returned to tab: restart the interval anchored to saved elapsed
+        startedAt = Date.now() - elapsed * 1000;
+        timerHandle = setInterval(() => {
+          elapsed = Math.floor((Date.now() - startedAt) / 1000);
+          $("timer").textContent = formatTime(elapsed);
+          if (elapsed > 0 && elapsed % 5 === 0 && elapsed !== lastSyncTime) {
+            lastSyncTime = elapsed;
+            saveState();
+          }
+        }, 250);
       }
     });
-    
-    function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; saveState(); }
 
     function loadGameSession() {
       setPuzzleTitles();
       dailyPuzzles = generateDailyPuzzles(todayISO);
       appState = loadStateForDate();
       elapsed = appState.elapsed;
-      
+
       if (firebase) subscribeLeaderboard();
+
+      // If they already started (level > 0 or elapsed > 0) resume without Play screen
+      if (appState.elapsed > 0 || appState.level > 0) {
+        gameStarted = true;
+      }
+
       initLevel();
+
+      // Auto-resume timer if mid-game
+      if (gameStarted && !appState.finished) {
+        startTimer();
+      }
     }
 
     function initLevel() {
-      $("timer").textContent = formatTime(elapsed); // Fix #1: Moved this UP so it shows winning time when page reloads
+      $("timer").textContent = formatTime(elapsed);
 
       if (appState.finished) { renderFinishedState(); return; }
-      
+
       const p = dailyPuzzles[appState.level];
       const slotCount = p.template.filter(t => t === 'SLOT').length;
       userSlots = new Array(slotCount).fill('');
       activeSlotIndex = 0;
-      
+
       $("messageArea").textContent = '';
       $("runBtn").textContent = 'Run Circuit';
       $("runBtn").style.display = "";
       $("levelIndicator").textContent = `Puzzle ${appState.level + 1} of 5`;
       document.querySelector('.operator-bank').style.display = '';
+
+      // Show Play overlay only on very first visit (level 0, never started)
+      const overlay = $("playOverlay");
+      if (!gameStarted) {
+        overlay.classList.remove('hidden');
+      } else {
+        overlay.classList.add('hidden');
+      }
+
       renderBoard();
     }
+
+    $("playBtn")?.addEventListener('click', () => {
+      gameStarted = true;
+      $("playOverlay").classList.add('hidden');
+      startTimer();
+    });
 
     function renderBoard() {
       const board = $("equationBoard");
@@ -626,7 +663,7 @@
           const i = slotIdx;
           div.className = `slot ${activeSlotIndex === i ? 'active' : ''} ${userSlots[i] ? 'filled' : ''}`;
           div.textContent = userSlots[i];
-          div.onclick = () => { activeSlotIndex = i; startTimer(); renderBoard(); };
+          div.onclick = () => { activeSlotIndex = i; renderBoard(); };
           board.appendChild(div);
           slotIdx++;
         } else {
@@ -641,7 +678,6 @@
     document.querySelectorAll('.op-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         if (activeSlotIndex !== null) {
-          startTimer();
           userSlots[activeSlotIndex] = e.target.dataset.op;
           const nextEmpty = userSlots.findIndex(v => v === '');
           activeSlotIndex = nextEmpty !== -1 ? nextEmpty : null;
@@ -666,11 +702,11 @@
           saveState();
           finishGame();
         } else {
-          stopTimer(); // Fix #2: Pauses the timer while you read the success message
+          // Timer keeps running — just show the success message and swap button
           showMsg('Connection established.', 'good');
           $("runBtn").textContent = 'Next Puzzle';
-          $("runBtn").onclick = () => { 
-            appState.level++; saveState(); $("runBtn").onclick = null; initLevel(); 
+          $("runBtn").onclick = () => {
+            appState.level++; saveState(); $("runBtn").onclick = null; initLevel();
           };
         }
       } else {
