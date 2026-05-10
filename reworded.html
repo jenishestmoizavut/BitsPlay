@@ -434,6 +434,16 @@ function saveState() {
         puzzleSource = cloudPuzzle.source;
         ensureCurrentPuzzle();
         renderPuzzle();
+
+        // If user is signed in, disable inputs until Firestore confirms today's state
+        // (prevents playing again on a second device before the cloud sync arrives)
+        if (firebase?.auth?.currentUser && !appState.current.finished) {
+          document.querySelectorAll(".answer-input").forEach(i => i.disabled = true);
+          $("finalInput").disabled = true;
+          // Show a small non-blocking notice in the game message area
+          const msg = $("gameMessage");
+          if (msg) { msg.id = "cloudCheckMsg"; msg.textContent = "Checking your progress…"; msg.className = "message"; }
+        }
       } catch (error) { console.warn("Cloud puzzle error:", error); }
     }
 
@@ -701,10 +711,23 @@ function renderComments() {
         
        onAuthStateChanged(firebase.auth, async (account) => {
           user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
+
+          if (!account) {
+            // No user signed in — unlock inputs immediately
+            document.querySelectorAll(".answer-input").forEach(i => { if (!appState.current?.finished) i.disabled = false; });
+            const fi = $("finalInput"); if (fi && !appState.current?.finished) fi.disabled = false;
+            const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
+          }
           
           if (account && firebase.onSnapshot) {
              // 1. SYNC USER STATE (Streaks and Results)
              firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
+                const unlockInputs = () => {
+                  document.querySelectorAll(".answer-input").forEach(i => { if (!appState.current.finished) i.disabled = false; });
+                  const fi = $("finalInput"); if (fi && !appState.current.finished) fi.disabled = false;
+                  const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
+                };
+
                 if (docSnap.exists()) {
                    const data = docSnap.data();
                    let updated = false;
@@ -719,7 +742,18 @@ function renderComments() {
                        const remote = data.reworded_current;
                        const remoteSolved = remote.clues?.filter(c=>c.solved).length || 0;
                        const localSolved = appState.current.clues?.filter(c=>c.solved).length || 0;
-                       if ((remote.finished && !appState.current.finished) || (!appState.current.finished && remoteSolved > localSolved)) {
+
+                       // If cloud says finished: lock this device immediately — no replaying
+                       if (remote.finished && !appState.current.finished) {
+                           stopTimer();
+                           appState.current = remote;
+                           if (remote.elapsed) elapsed = remote.elapsed;
+                           localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                           renderPuzzle();
+                           return; // don't unlockInputs — game is over
+                       }
+
+                       if (!appState.current.finished && remoteSolved > localSolved) {
                            appState.current = remote;
                            if (remote.elapsed) elapsed = remote.elapsed;
                            updated = true;
@@ -730,6 +764,12 @@ function renderComments() {
                        renderPuzzle();
                    }
                 }
+                unlockInputs();
+             }, () => {
+                // Firestore read failed (new user, no doc) — unlock anyway
+                document.querySelectorAll(".answer-input").forEach(i => { i.disabled = false; });
+                const fi = $("finalInput"); if (fi) fi.disabled = false;
+                const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
              });
 
              // 2. LEADERBOARD LISTENER (Only for ReWorded)
@@ -776,6 +816,15 @@ function renderComments() {
         await loadCloudPuzzle();
       } catch (error) {}
     }
+
+    // Safety fallback: if Firebase auth takes >5s, unlock inputs anyway
+    setTimeout(() => {
+      if (!appState.current?.finished) {
+        document.querySelectorAll(".answer-input").forEach(i => i.disabled = false);
+        const fi = $("finalInput"); if (fi) fi.disabled = false;
+        const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
+      }
+    }, 5000);
     async function authAction() {
       if (!firebase) { $("finishTitle").textContent = "Firebase not configured"; $("finishModal").classList.add("open"); return; }
       try { if (firebase.auth.currentUser) await firebase.signOut(firebase.auth); else await firebase.signInWithPopup(firebase.auth, firebase.provider); } catch (error) {}
