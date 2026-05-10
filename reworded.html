@@ -725,8 +725,7 @@ function renderComments() {
                firebase.query(
                  firebase.collection(firebase.db, "comments"), 
                  firebase.where("puzzleId", "==", todayISO),
-                 firebase.where("game", "==", "reworded"), // Prevents intermixing
-                 firebase.orderBy("createdAtMs", "desc"), 
+                 firebase.where("game", "==", "reworded"),
                  firebase.limit(50)
                ), 
                (snap) => {
@@ -735,12 +734,12 @@ function renderComments() {
                    return { 
                      uid: entry.uid, 
                      name: entry.name || "Player",
-                     photoURL: entry.photoURL || "", // Captured avatar
+                     photoURL: entry.photoURL || "",
                      text: entry.text || "", 
                      createdAt: entry.createdAtMs || 0, 
                      dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" 
                    }; 
-                 });
+                 }).sort((a, b) => b.createdAt - a.createdAt); // Sort newest-first in JS, no composite index needed
                  renderComments();
                }
              );
