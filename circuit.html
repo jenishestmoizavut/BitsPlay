@@ -119,6 +119,16 @@
     .modal p { color: var(--soft); line-height: 1.5; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 
+    /* --- NEXT GAME CARDS --- */
+    .next-games { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .next-game-card { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel-soft); text-decoration: none; color: var(--text); transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.12s ease; cursor: pointer; }
+    .next-game-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,99,235,0.12); }
+    .next-game-logo { width: 36px; height: 36px; border-radius: 8px; object-fit: contain; flex: 0 0 auto; }
+    .next-game-info { min-width: 0; }
+    .next-game-info strong { display: block; font-size: 0.9rem; font-weight: 750; }
+    .next-game-info span { font-size: 0.76rem; color: var(--muted); }
+    .next-games-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px; margin-bottom: 2px; }
+
     @media (max-width: 880px) { .game-layout { grid-template-columns: 1fr; } }
     @media (max-width: 620px) { 
       .shell { width: min(100% - 16px, 1180px); padding-top: 16px; padding-bottom: 22px; }
@@ -223,6 +233,23 @@
       <div class="modal-actions">
         <button class="btn" type="button" id="closeModalBtn">Close</button>
         <button class="btn primary" type="button" id="shareBtn">Share Result</button>
+      </div>
+      <p class="next-games-label">Play another game</p>
+      <div class="next-games">
+        <a href="reworded.html" class="next-game-card">
+          <img src="ReWorded.png" alt="ReWorded Logo" class="next-game-logo">
+          <div class="next-game-info">
+            <strong>ReWorded</strong>
+            <span>Solve clues, find the word</span>
+          </div>
+        </a>
+        <a href="index.html" class="next-game-card">
+          <img src="BitsPlay.png" alt="BitsPlay Logo" class="next-game-logo">
+          <div class="next-game-info">
+            <strong>BitsPlay Hub</strong>
+            <span>See all games</span>
+          </div>
+        </a>
       </div>
     </div>
   </div>
@@ -523,6 +550,7 @@
 
     function startTimer() {
       if (appState.finished || timerHandle) return;
+      // Always anchor startedAt from the saved elapsed so mobile reloads resume correctly
       startedAt = Date.now() - elapsed * 1000;
       timerHandle = setInterval(() => {
         elapsed = Math.floor((Date.now() - startedAt) / 1000);
@@ -535,6 +563,28 @@
         }
       }, 250);
     }
+
+    // Visibility change handler: pause/resume timer when tab/app goes background on mobile
+    document.addEventListener("visibilitychange", () => {
+      if (appState.finished) return;
+      if (document.hidden) {
+        // Page going background: stop interval but save current elapsed
+        if (timerHandle) { clearInterval(timerHandle); timerHandle = null; saveState(); }
+      } else {
+        // Page coming back: re-anchor startedAt from saved elapsed and restart
+        if (!timerHandle && !appState.finished && appState.level > 0 || elapsed > 0) {
+          startedAt = Date.now() - elapsed * 1000;
+          timerHandle = setInterval(() => {
+            elapsed = Math.floor((Date.now() - startedAt) / 1000);
+            $("timer").textContent = formatTime(elapsed);
+            if (elapsed > 0 && elapsed % 5 === 0 && elapsed !== lastSyncTime) {
+              lastSyncTime = elapsed;
+              saveState();
+            }
+          }, 250);
+        }
+      }
+    });
     
     function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; saveState(); }
 
