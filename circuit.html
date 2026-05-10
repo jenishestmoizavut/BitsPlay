@@ -475,6 +475,8 @@
     let startedAt = null;
     let lastSyncTime = -1; // Fix #3: Prevents interval spam to Firebase
     let cloudComments = [];
+    let leaderboardUnsub = null;
+    let commentsUnsub = null;
 
     function currentPlayerId() {
       return user?.uid || localStorage.getItem("guest_uid") || "guest";
@@ -786,9 +788,6 @@ function renderComments() {
     // ==========================================
     // 5. FIREBASE INTEGRATION
     // ==========================================
-    let leaderboardUnsub = null;
-    let commentsUnsub = null;
-    
     function subscribeLeaderboard() {
       if (!firebase) return;
       if (leaderboardUnsub) leaderboardUnsub();
