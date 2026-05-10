@@ -123,6 +123,8 @@
     .play-overlay.hidden { display: none; }
     .play-btn { width: 72px; height: 72px; border-radius: 50%; background: var(--accent); border: none; display: grid; place-items: center; cursor: pointer; box-shadow: 0 8px 28px rgba(37,99,235,0.35); transition: transform 0.15s ease, box-shadow 0.15s ease; }
     .play-btn:hover { transform: scale(1.08); box-shadow: 0 12px 36px rgba(37,99,235,0.45); }
+    .play-btn[data-locked="true"] { background: var(--muted); box-shadow: none; cursor: wait; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .play-btn svg { margin-left: 4px; }
     .play-overlay p { color: var(--soft); font-size: 0.88rem; font-weight: 600; margin: 0; }
     .circuit-board { position: relative; padding: 40px 18px; text-align: center; }
@@ -184,10 +186,10 @@
 
         <div class="circuit-board">
           <div class="play-overlay hidden" id="playOverlay">
-            <button class="play-btn" id="playBtn" aria-label="Start game">
+            <button class="play-btn" id="playBtn" aria-label="Start game" data-locked="true">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
             </button>
-            <p>Press Play to start the timer</p>
+            <p id="playOverlayMsg">Checking your progress…</p>
           </div>
           <div class="level-indicator">
             <span id="levelIndicator">Puzzle 1 of 5</span>
@@ -648,6 +650,8 @@
     }
 
     $("playBtn")?.addEventListener('click', () => {
+      // Don't allow starting until Firebase has confirmed no prior finish today
+      if ($("playBtn").dataset.locked === "true") return;
       gameStarted = true;
       $("playOverlay").classList.add('hidden');
       startTimer();
@@ -911,6 +915,14 @@ function renderComments() {
           $("authLabel").textContent = user ? (user.displayName.split(" ")[0]) : "Sign in";
           subscribeLeaderboard();
           subscribeComments();
+
+          if (!account) {
+            // No user signed in — unlock Play immediately
+            const btn = $("playBtn");
+            if (btn) { btn.dataset.locked = "false"; }
+            const msg = $("playOverlayMsg");
+            if (msg) msg.textContent = "Press Play to start the timer";
+          }
           
           if (account) {
              // Subscribe to Cross-Device real-time sync
@@ -926,27 +938,66 @@ function renderComments() {
 
                    const remote = data.circuit_state;
                    if (remote && remote.date === todayISO) {
-                      let needsUpdate = false;
-                      if (remote.finished && !appState.finished) needsUpdate = true;
-                      if (!appState.finished && remote.level > appState.level) needsUpdate = true;
-                      
-                      if (needsUpdate) {
+                      // If cloud says finished, lock this device immediately — no replaying
+                      if (remote.finished && !appState.finished) {
+                         stopTimer(); // kill any running timer on this device
+                         gameStarted = true;
                          appState.level = remote.level;
-                         appState.finished = remote.finished;
+                         appState.finished = true;
+                         appState.elapsed = remote.elapsed || appState.elapsed;
+                         elapsed = appState.elapsed;
+                         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                         initLevel(); // renders the finished state
+                         return;
+                      }
+                      // If cloud is ahead in level (but not finished), sync progress
+                      if (!appState.finished && remote.level > appState.level) {
+                         appState.level = remote.level;
                          if (remote.elapsed) {
                             appState.elapsed = remote.elapsed;
-                            elapsed = remote.elapsed; // Sync local tracker variable so it doesn't get overwritten
+                            elapsed = remote.elapsed;
                          }
                          localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
                          initLevel();
                       }
                    }
                 }
+
+                // Unlock Play button now that we know the cloud state
+                const btn = $("playBtn");
+                if (btn && !appState.finished) {
+                  btn.dataset.locked = "false";
+                  const msg = $("playOverlayMsg");
+                  if (msg) msg.textContent = "Press Play to start the timer";
+                }
+             }, () => {
+                // Firestore read failed (new user, no doc yet) — unlock anyway
+                const btn = $("playBtn");
+                if (btn) { btn.dataset.locked = "false"; }
+                const msg = $("playOverlayMsg");
+                if (msg) msg.textContent = "Press Play to start the timer";
              });
           }
         });
-      } catch (error) { console.warn("Firebase unavailable", error); }
+      } catch (error) { 
+        console.warn("Firebase unavailable", error);
+        // Firebase failed entirely — unlock Play so the game isn't stuck
+        const btn = $("playBtn");
+        if (btn) { btn.dataset.locked = "false"; }
+        const msg = $("playOverlayMsg");
+        if (msg) msg.textContent = "Press Play to start the timer";
+      }
     }
+
+    // Safety fallback: if Firebase auth takes >5s, unlock Play anyway
+    setTimeout(() => {
+      const btn = $("playBtn");
+      if (btn && btn.dataset.locked === "true") {
+        btn.dataset.locked = "false";
+        const msg = $("playOverlayMsg");
+        if (msg) msg.textContent = "Press Play to start the timer";
+      }
+    }, 5000);
 
     // Connect the new persistent share button
     $("persistentShareBtn")?.addEventListener("click", () => $("shareBtn").click());
