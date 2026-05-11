@@ -721,10 +721,21 @@ function renderComments() {
              // 1. SYNC USER STATE (Streaks and Results)
              firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
                 const unlockInputs = () => {
-                  document.querySelectorAll(".answer-input").forEach(i => { if (!appState.current.finished) i.disabled = false; });
-                  const fi = $("finalInput"); if (fi && !appState.current.finished) fi.disabled = false;
-                  const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
-                };
+  document.querySelectorAll(".answer-input").forEach(i => { 
+    // This && i.disabled check is the magic key!
+    if (!appState.current.finished && i.disabled) {
+      i.disabled = false; 
+    }
+  });
+  
+  const fi = $("finalInput"); 
+  if (fi && !appState.current.finished && fi.disabled) {
+    fi.disabled = false;
+  }
+  
+  const checkingMsg = $("cloudCheckMsg"); 
+  if (checkingMsg) checkingMsg.remove();
+};
 
                 if (docSnap.exists()) {
                    const data = docSnap.data();
