@@ -79,7 +79,7 @@
     .game-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
     .game-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 14px; display: flex; flex-direction: column; gap: 12px; min-height: 170px; transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease; }
     .game-card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: var(--shadow); }
-    .game-icon { width: 38px; height: 38px; border-radius: var(--radius); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 850; }
+    .game-icon { width: 38px; height: 38px; border-radius: var(--radius); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 850; font-size: 1.2rem; }
     .game-card h3 { margin: 0; font-size: 1.05rem; }
     .game-card p { margin: -6px 0 auto; color: var(--soft); line-height: 1.45; font-size: 0.88rem; }
     .locked { opacity: 0.68; filter: grayscale(0.3); }
@@ -142,7 +142,7 @@
       <div class="hub-layout">
         <section>
           <div class="hero">
-            <h2>Today&apos;s puzzles are ready.</h2>
+            <h2>Today's puzzles are ready.</h2>
             <p>Jump into ReWorded to test your trivia, or Circuit to challenge your logic.</p>
             <div class="hero-actions">
               <button class="btn primary" type="button" onclick="window.location.href='reworded.html';">Play ReWorded</button>
@@ -165,11 +165,11 @@
               <button class="btn primary" type="button" onclick="window.location.href='circuit.html';">Play</button>
             </article>
 
-            <article class="game-card locked">
-              <div class="game-icon">?</div>
-              <h3>Culture Snap</h3>
-              <p>A future pop-culture grid with one-minute recall rounds.</p>
-              <button class="btn" type="button" disabled>Coming soon</button>
+            <article class="game-card">
+              <img src="Gridrule.png" alt="Gridrule Logo" class="game-icon" style="background: transparent; object-fit: contain; padding: 2px; border-radius: var(--radius);">
+              <h3>Gridrule</h3>
+              <p>Satisfy all logic rules to place the tokens perfectly on a 5x5 grid.</p>
+              <button class="btn primary" type="button" onclick="window.location.href='gridrule.html';">Play</button>
             </article>
           </div>
         </section>
@@ -244,6 +244,14 @@
                 <span>Circuit Best Time</span>
                 <strong id="cirBestPill">--:--</strong>
              </div>
+             <div class="stat-row">
+                <span>Gridrule Streak</span>
+                <strong id="grStreakPill">0</strong>
+             </div>
+             <div class="stat-row">
+                <span>Gridrule Best Time</span>
+                <strong id="grBestPill">--:--</strong>
+             </div>
           </div>
         </section>
         <aside class="side-panel">
@@ -285,6 +293,9 @@
       
       const cirState = JSON.parse(localStorage.getItem("circuit_games_v1") || "{}");
       const cirResults = cirState.results || {};
+
+      const grState = JSON.parse(localStorage.getItem("gridrule_games_v1") || "{}");
+      const grResults = grState.results || {};
 
       const uid = user?.uid || localStorage.getItem("guest_uid") || "guest";
       const todayISO = new Date().toISOString().split('T')[0];
@@ -332,6 +343,27 @@
       }
       const cStreakEl = $("cirStreakPill");
       if(cStreakEl) cStreakEl.textContent = String(cirStreak);
+
+      // Gridrule Stats
+      const allGrResults = Object.entries(grResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r);
+      const grBestTime = allGrResults.length ? Math.min(...allGrResults.map(r => r.time)) : null;
+      
+      const gBestEl = $("grBestPill");
+      if(gBestEl) gBestEl.textContent = grBestTime == null ? "--:--" : `${Math.floor(grBestTime / 60).toString().padStart(2, "0")}:${Math.floor(grBestTime % 60).toString().padStart(2, "0")}`;
+
+      let grStreak = 0; 
+      const gCursor = new Date(`${todayISO}T00:00:00`);
+
+      if (!Object.entries(grResults).some(([k, r]) => k.includes(todayISO) && r?.uid === uid)) {
+          gCursor.setDate(gCursor.getDate() - 1);
+      }
+      while (true) {
+        if (!Object.entries(grResults).some(([k, r]) => k.includes(toLocalISODate(gCursor)) && r?.uid === uid)) break;
+        grStreak += 1; 
+        gCursor.setDate(gCursor.getDate() - 1);
+      }
+      const gStreakEl = $("grStreakPill");
+      if(gStreakEl) gStreakEl.textContent = String(grStreak);
     }
 
     function renderProfile() {
@@ -355,16 +387,16 @@
           { initializeApp },
           { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
           { getFirestore, doc, onSnapshot },
-          { getAnalytics } // 1. Extract getAnalytics
+          { getAnalytics }
         ] = await Promise.all([
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"),
-    import("https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js") // 2. Import the Analytics SDK
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js")
         ]);
         
         const app = initializeApp(FIREBASE_CONFIG);
-        const analytics = getAnalytics(app); // 3. Initialize Analytics
+        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
@@ -391,6 +423,13 @@
                       const cirState = JSON.parse(localStorage.getItem("circuit_games_v1") || "{}");
                       cirState.results = { ...(cirState.results || {}), ...data.circuit_results };
                       localStorage.setItem("circuit_games_v1", JSON.stringify(cirState));
+                   }
+
+                   // Pull Gridrule History
+                   if (data.gridrule_results) {
+                      const grState = JSON.parse(localStorage.getItem("gridrule_games_v1") || "{}");
+                      grState.results = { ...(grState.results || {}), ...data.gridrule_results };
+                      localStorage.setItem("gridrule_games_v1", JSON.stringify(grState));
                    }
 
                    calculateStats();
