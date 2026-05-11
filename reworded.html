@@ -366,7 +366,8 @@
         return { results: parsed.results || {}, leaderboard: parsed.leaderboard || {}, comments: parsed.comments || {}, currents: parsed.currents || {}, profileName: parsed.profileName || "Guest Player" };
       } catch { return { results: {}, leaderboard: {}, comments: {}, currents: {}, profileName: "Guest Player" }; }
     }
-function saveState() {
+
+    function saveState() {
       appState.currents = appState.currents || {};
       appState.currents[`${currentPlayerId()}::${puzzle.id}`] = appState.current;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ results: appState.results, leaderboard: appState.leaderboard, comments: appState.comments, currents: appState.currents, profileName: appState.profileName }));
@@ -501,7 +502,7 @@ function saveState() {
       $("finalInput").disabled = finished;
       $("finalInput").value = finished ? puzzle.word : "";
       
-     const submitBtn = $("finalForm").querySelector("button[type='submit']");
+      const submitBtn = $("finalForm").querySelector("button[type='submit']");
       const persistentShareBtn = $("persistentShareBtn");
       if (submitBtn) submitBtn.style.display = finished ? "none" : "";
       if (persistentShareBtn) persistentShareBtn.style.display = finished ? "" : "none";
@@ -565,23 +566,24 @@ function saveState() {
         saveState();
       }
     }
-function startTimer() {
-  if (appState.current.finished || timerHandle) return;
-  startedAt = Date.now() - elapsed * 1000;
-  
-  timerHandle = setInterval(() => {
-    const currentElapsed = Math.floor((Date.now() - startedAt) / 1000);
-    
-    // Only run this logic once per second when the number actually changes
-    if (currentElapsed !== elapsed) {
-      elapsed = currentElapsed;
-      appState.current.elapsed = elapsed;
-      $("timer").textContent = formatTime(elapsed);
+
+    function startTimer() {
+      if (appState.current.finished || timerHandle) return;
+      startedAt = Date.now() - elapsed * 1000;
       
-      if (elapsed > 0 && elapsed % 5 === 0) saveState();
+      timerHandle = setInterval(() => {
+        const currentElapsed = Math.floor((Date.now() - startedAt) / 1000);
+        
+        // Only run this logic once per second when the number actually changes
+        if (currentElapsed !== elapsed) {
+          elapsed = currentElapsed;
+          appState.current.elapsed = elapsed;
+          $("timer").textContent = formatTime(elapsed);
+          
+          if (elapsed > 0 && elapsed % 5 === 0) saveState();
+        }
+      }, 250);
     }
-  }, 250);
-}
 
     function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; appState.current.elapsed = elapsed; saveState(); }
 
@@ -623,77 +625,75 @@ function startTimer() {
       $("streakPill").textContent = `Streak ${streak}`;
     }
 
-function renderComments() {
-  const panel = $("commentPanel");
-  const finished = !!appState.current?.finished;
-  panel.classList.toggle("visible", finished);
-  
-  $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";
-  $("commentInput").disabled = !finished; 
-  $("commentSubmitBtn").disabled = !finished;
+    function renderComments() {
+      const panel = $("commentPanel");
+      const finished = !!appState.current?.finished;
+      panel.classList.toggle("visible", finished);
+      
+      $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";
+      $("commentInput").disabled = !finished; 
+      $("commentSubmitBtn").disabled = !finished;
 
-  const merged = new Map();
-  [...cloudComments].forEach(entry => { 
-    if (entry && entry.uid) merged.set(entry.uid, entry); 
-  });
-  
-  const comments = Array.from(merged.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      const merged = new Map();
+      [...cloudComments].forEach(entry => { 
+        if (entry && entry.uid) merged.set(entry.uid, entry); 
+      });
+      
+      const comments = Array.from(merged.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-  $("commentList").innerHTML = comments.length ? comments.map(entry => {
-    // Generate the avatar HTML (uses a placeholder div if no photo exists)
-    const avatarImg = entry.photoURL 
-      ? `<img src="${entry.photoURL}" class="avatar" style="width:20px; height:20px; margin-right:6px;">` 
-      : `<div class="avatar" style="width:20px; height:20px; margin-right:6px; background:var(--line); display:inline-block;"></div>`;
+      $("commentList").innerHTML = comments.length ? comments.map(entry => {
+        const avatarImg = entry.photoURL 
+          ? `<img src="${entry.photoURL}" class="avatar" style="width:20px; height:20px; margin-right:6px;">` 
+          : `<div class="avatar" style="width:20px; height:20px; margin-right:6px; background:var(--line); display:inline-block;"></div>`;
 
-    return `
-      <article class="comment-card">
-        <div class="comment-meta">
-          <span style="display:flex; align-items:center;">
-            ${avatarImg} 
-            <strong>${escapeHtml(entry.name)}</strong>
-          </span>
-          <span>${escapeHtml(entry.dateLabel || "")}</span>
-        </div>
-        <div class="comment-body">${escapeHtml(entry.text || "")}</div>
-      </article>
-    `;
-  }).join("") : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
-}
+        return `
+          <article class="comment-card">
+            <div class="comment-meta">
+              <span style="display:flex; align-items:center;">
+                ${avatarImg} 
+                <strong>${escapeHtml(entry.name)}</strong>
+              </span>
+              <span>${escapeHtml(entry.dateLabel || "")}</span>
+            </div>
+            <div class="comment-body">${escapeHtml(entry.text || "")}</div>
+          </article>
+        `;
+      }).join("") : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
+    }
 
     async function submitComment(event) {
-  event.preventDefault(); 
-  const text = $("commentInput").value.trim();
-  if (!text) return;
-  if (!firebase) return;
+      event.preventDefault(); 
+      const text = $("commentInput").value.trim();
+      if (!text) return;
+      if (!firebase) return;
 
-  $("commentSubmitBtn").disabled = true; 
-  $("commentStatus").textContent = "Posting…";
+      $("commentSubmitBtn").disabled = true; 
+      $("commentStatus").textContent = "Posting…";
 
-  try {
-    // Uses a unique ID based on game, date, and user to prevent intermixing
-    const commentId = `reworded_${todayISO}_${currentPlayerId()}`;
-    
-    await firebase.setDoc(firebase.doc(firebase.db, "comments", commentId), {
-      puzzleId: todayISO,
-      uid: currentPlayerId(),
-      name: user?.displayName || appState.profileName || "Guest Player",
-      photoURL: user?.photoURL || "", // <--- Sends your avatar URL to the cloud
-      text,
-      game: "reworded",
-      createdAtMs: Date.now(),
-      updatedAt: firebase.serverTimestamp()
-    }, { merge: true });
+      try {
+        const commentId = `reworded_${todayISO}_${currentPlayerId()}`;
+        
+        await firebase.setDoc(firebase.doc(firebase.db, "comments", commentId), {
+          puzzleId: todayISO,
+          uid: currentPlayerId(),
+          name: user?.displayName || appState.profileName || "Guest Player",
+          photoURL: user?.photoURL || "",
+          text,
+          game: "reworded",
+          createdAtMs: Date.now(),
+          updatedAt: firebase.serverTimestamp()
+        }, { merge: true });
 
-    $("commentInput").value = ""; 
-    $("commentStatus").textContent = "Comment posted!";
-    $("commentStatus").className = "comment-status good";
-  } catch (error) { 
-    $("commentStatus").textContent = "Post failed. Try again."; 
-    $("commentStatus").className = "comment-status bad"; 
-  } finally { 
-    $("commentSubmitBtn").disabled = false; 
-  }
-}
+        $("commentInput").value = ""; 
+        $("commentStatus").textContent = "Comment posted!";
+        $("commentStatus").className = "comment-status good";
+      } catch (error) { 
+        $("commentStatus").textContent = "Post failed. Try again."; 
+        $("commentStatus").className = "comment-status bad"; 
+      } finally { 
+        $("commentSubmitBtn").disabled = false; 
+      }
+    }
 
     function renderProfile() {
       const authLabel = document.getElementById("authLabel");
@@ -707,7 +707,7 @@ function renderComments() {
         ]);
         firebase = { auth: getAuth(initializeApp(FIREBASE_CONFIG)), db: getFirestore(), provider: new GoogleAuthProvider(), signInWithPopup, signOut, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where };
         
-       onAuthStateChanged(firebase.auth, async (account) => {
+        onAuthStateChanged(firebase.auth, async (account) => {
           user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
 
           if (!account) {
@@ -721,21 +721,20 @@ function renderComments() {
              // 1. SYNC USER STATE (Streaks and Results)
              firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
                 const unlockInputs = () => {
-  document.querySelectorAll(".answer-input").forEach(i => { 
-    // This && i.disabled check is the magic key!
-    if (!appState.current.finished && i.disabled) {
-      i.disabled = false; 
-    }
-  });
-  
-  const fi = $("finalInput"); 
-  if (fi && !appState.current.finished && fi.disabled) {
-    fi.disabled = false;
-  }
-  
-  const checkingMsg = $("cloudCheckMsg"); 
-  if (checkingMsg) checkingMsg.remove();
-};
+                  document.querySelectorAll(".answer-input").forEach(i => { 
+                    if (!appState.current.finished && i.disabled) {
+                      i.disabled = false; 
+                    }
+                  });
+                  
+                  const fi = $("finalInput"); 
+                  if (fi && !appState.current.finished && fi.disabled) {
+                    fi.disabled = false;
+                  }
+                  
+                  const checkingMsg = $("cloudCheckMsg"); 
+                  if (checkingMsg) checkingMsg.remove();
+                };
 
                 if (docSnap.exists()) {
                    const data = docSnap.data();
@@ -814,7 +813,7 @@ function renderComments() {
                      createdAt: entry.createdAtMs || 0, 
                      dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" 
                    }; 
-                 }).sort((a, b) => b.createdAt - a.createdAt); // Sort newest-first in JS, no composite index needed
+                 }).sort((a, b) => b.createdAt - a.createdAt);
                  renderComments();
                }
              );
@@ -823,7 +822,7 @@ function renderComments() {
         });
 
         await loadCloudPuzzle();
-      } catch (error) {}
+      } catch (error) { console.warn("Firebase init error:", error); }
     }
 
     // Safety fallback: if Firebase auth takes >5s, unlock inputs anyway
@@ -834,6 +833,7 @@ function renderComments() {
         const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
       }
     }, 5000);
+
     async function authAction() {
       if (!firebase) { $("finishTitle").textContent = "Firebase not configured"; $("finishModal").classList.add("open"); return; }
       try { if (firebase.auth.currentUser) await firebase.signOut(firebase.auth); else await firebase.signInWithPopup(firebase.auth, firebase.provider); } catch (error) {}
@@ -845,7 +845,7 @@ function renderComments() {
     }
 
     function shareResult() {
-const result = appState.results[`${currentPlayerId()}::${puzzle.id}`];
+      const result = appState.results[`${currentPlayerId()}::${puzzle.id}`];
       const puzzleNumber = Math.max(1, Math.floor((new Date(`${puzzle.id}T00:00:00`) - new Date("2026-05-06T00:00:00")) / 86400000) + 1);
       const text = result ? `BitsPlay - ReWorded #${puzzleNumber}\nIt took me ${formatTime(result.time)} to solve today's ReWorded puzzle, let me know how long you took! \njenishestmoizavut.github.io/BitsPlay/reworded.html` : "BitsPlay - ReWorded\njenishestmoizavut.github.io/BitsPlay/reworded.html";
       if (navigator.share) navigator.share({ text }).catch(() => {}); else { navigator.clipboard?.writeText(text); $("finishCopy").textContent = "Result copied to clipboard."; }
@@ -866,13 +866,55 @@ const result = appState.results[`${currentPlayerId()}::${puzzle.id}`];
       if (e.target.matches(".answer-input")) handleClueInput(e);
     });
     $("finalInput").addEventListener("focus", startTimer);
+
+    // FIX 1: Guard against puzzle being null before submit runs
+    // FIX 2: Guard against game already being finished
+    // FIX 3: Guard against finalInput being disabled (still locked from cloud check)
     $("finalForm").addEventListener("submit", (event) => {
-      event.preventDefault(); startTimer();
-      if (normalize($("finalInput").value) === normalize(puzzle.word)) {
-        $("gameMessage").textContent = "Correct."; $("gameMessage").className = "message good"; playSound('win'); finishGame();
+      event.preventDefault();
+
+      // Puzzle hasn't loaded from Firebase yet
+      if (!puzzle) {
+        $("gameMessage").textContent = "Puzzle not loaded yet. Please wait a moment.";
+        $("gameMessage").className = "message bad";
+        return;
+      }
+
+      // Game is already finished — shouldn't be submittable but guard anyway
+      if (appState.current?.finished) {
+        return;
+      }
+
+      // Input is still locked from cloud sync check — tell the user to wait
+      if ($("finalInput").disabled) {
+        $("gameMessage").textContent = "Still checking your progress. Please wait.";
+        $("gameMessage").className = "message bad";
+        return;
+      }
+
+      startTimer();
+
+      const inputValue = $("finalInput").value;
+
+      if (!inputValue.trim()) {
+        $("gameMessage").textContent = "Please enter your final word.";
+        $("gameMessage").className = "message bad";
+        return;
+      }
+
+      if (normalize(inputValue) === normalize(puzzle.word)) {
+        $("gameMessage").textContent = "Correct.";
+        $("gameMessage").className = "message good";
+        playSound('win');
+        finishGame();
       } else {
-        $("gameMessage").textContent = "Not quite. Try rearranging the revealed letters."; $("gameMessage").className = "message bad"; playSound('error'); 
-        const inputElement = $("finalInput"); inputElement.classList.remove("shake"); void inputElement.offsetWidth; inputElement.classList.add("shake");
+        $("gameMessage").textContent = "Not quite. Try rearranging the revealed letters.";
+        $("gameMessage").className = "message bad";
+        playSound('error');
+        const inputElement = $("finalInput");
+        inputElement.classList.remove("shake");
+        void inputElement.offsetWidth; // force reflow to restart animation
+        inputElement.classList.add("shake");
       }
     });
 
