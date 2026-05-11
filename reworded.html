@@ -565,17 +565,23 @@ function saveState() {
         saveState();
       }
     }
-
-    function startTimer() {
-      if (appState.current.finished || timerHandle) return;
-      startedAt = Date.now() - elapsed * 1000;
-      timerHandle = setInterval(() => {
-        elapsed = Math.floor((Date.now() - startedAt) / 1000);
-        appState.current.elapsed = elapsed;
-        $("timer").textContent = formatTime(elapsed);
-        if (elapsed % 5 === 0) saveState();
-      }, 250);
+function startTimer() {
+  if (appState.current.finished || timerHandle) return;
+  startedAt = Date.now() - elapsed * 1000;
+  
+  timerHandle = setInterval(() => {
+    const currentElapsed = Math.floor((Date.now() - startedAt) / 1000);
+    
+    // Only run this logic once per second when the number actually changes
+    if (currentElapsed !== elapsed) {
+      elapsed = currentElapsed;
+      appState.current.elapsed = elapsed;
+      $("timer").textContent = formatTime(elapsed);
+      
+      if (elapsed > 0 && elapsed % 5 === 0) saveState();
     }
+  }, 250);
+}
 
     function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; appState.current.elapsed = elapsed; saveState(); }
 
