@@ -506,14 +506,6 @@ function saveState() {
       if (submitBtn) submitBtn.style.display = finished ? "none" : "";
       if (persistentShareBtn) persistentShareBtn.style.display = finished ? "" : "none";
 
-      // START FIX: Bind timer to input focus
-      $("finalInput").addEventListener("focus", startTimer);
-      document.querySelectorAll(".answer-input").forEach(input => {
-        input.addEventListener("focus", startTimer);
-        input.addEventListener("input", handleClueInput);
-      });
-      // END FIX
-
       renderLeaderboards();
       renderComments();
     } 
@@ -848,6 +840,15 @@ const result = appState.results[`${currentPlayerId()}::${puzzle.id}`];
     $("shareBtn").addEventListener("click", shareResult);
     $("hintBtn").addEventListener("click", showHint);
     $("commentForm").addEventListener("submit", submitComment);
+
+    // Delegated input events — bound ONCE on the stable container, survives renderPuzzle() re-renders
+    $("clues").addEventListener("focus", (e) => {
+      if (e.target.matches(".answer-input")) startTimer();
+    }, true); // capture phase so focus bubbles correctly
+    $("clues").addEventListener("input", (e) => {
+      if (e.target.matches(".answer-input")) handleClueInput(e);
+    });
+    $("finalInput").addEventListener("focus", startTimer);
     $("finalForm").addEventListener("submit", (event) => {
       event.preventDefault(); startTimer();
       if (normalize($("finalInput").value) === normalize(puzzle.word)) {
