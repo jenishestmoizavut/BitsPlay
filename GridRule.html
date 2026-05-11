@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7f8fb" />
+  <title>Gridrule | BitsPlay</title>
+  <link rel="icon" type="image/png" href="BitsPlay.png" />
+  <style>
+    /* --- CORE BITSPLAY STYLES --- */
+    :root {
+      --bg: #f7f8fb; --panel: #ffffff; --panel-soft: #f1f5f9; --line: #dfe5ee;
+      --text: #111827; --soft: #526174; --muted: #7b8797;
+      --accent: #2563eb; --accent-soft: #e9f1ff;
+      --good: #16803c; --good-soft: #e8f7ee;
+      --warn: #a15c07; --warn-soft: #fff3dc;
+      --bad: #b42318; --bad-soft: #fef2f2;
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.09);
+      --radius: 8px;
+
+      /* Piece Colors */
+      --c-red: #ef4444; --c-blue: #3b82f6; --c-green: #22c55e; 
+      --c-yellow: #eab308; --c-purple: #a855f7;
+    }
+    body.dark {
+      --bg: #0b1020; --panel: #11182a; --panel-soft: #172033; --line: #273349;
+      --text: #edf2f8; --soft: #bec9d8; --muted: #91a0b4;
+      --accent: #60a5fa; --accent-soft: #132944;
+      --good: #5ee08a; --good-soft: #123420;
+      --warn: #f7bd59; --warn-soft: #38280e;
+      --bad: #ff8f87; --bad-soft: #451a1a;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+    button { border: 0; cursor: pointer; color: inherit; font: inherit; }
+    button:disabled { cursor: default; opacity: 0.55; }
+    
+    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 36px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .brand-mark { width: 34px; height: 34px; border-radius: var(--radius); background: var(--accent); display: grid; place-items: center; color: white; font-weight: 800; }
+    .brand h1 { font-size: 1.05rem; margin: 0; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; }
+    .top-actions { display: flex; gap: 8px; }
+    
+    .btn { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 8px 13px; background: var(--panel-soft); border: 1px solid var(--line); font-weight: 650; font-size: 0.86rem; transition: all 0.12s ease; }
+    .btn:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn.icon { width: 38px; padding: 0; }
+    
+    .game-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+    .play-area { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; padding-bottom: 24px;}
+    .game-header { padding: 18px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .game-header h2 { margin: 0 0 5px; font-size: clamp(1.5rem, 3vw, 2.25rem); letter-spacing: 0; }
+    .game-header p { margin: 0; color: var(--soft); max-width: 680px; line-height: 1.45; }
+    .game-tools { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .timer-box { min-width: 94px; text-align: right; font-size: 1.45rem; font-variant-numeric: tabular-nums; font-weight: 850; color: var(--accent); }
+    
+    .side-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+    .section-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .section-title h3 { margin: 0; font-size: 1rem; }
+    .small { color: var(--muted); font-size: 0.8rem; }
+    
+    /* --- GRIDRULE SPECIFIC STYLES --- */
+    .level-indicator { color: var(--muted); font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: center; margin: 24px 0 16px; }
+    
+    /* Play overlay — sits over the grid until the player presses Play */
+    .grid-wrapper { position: relative; }
+    .play-overlay { position: absolute; inset: 0; background: color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 10; border-radius: var(--radius); }
+    .play-overlay.hidden { display: none; }
+    .play-btn { width: 72px; height: 72px; border-radius: 50%; background: var(--accent); border: none; display: grid; place-items: center; cursor: pointer; box-shadow: 0 8px 28px rgba(37,99,235,0.35); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .play-btn:hover { transform: scale(1.08); box-shadow: 0 12px 36px rgba(37,99,235,0.45); }
+    .play-btn[data-locked="true"] { background: var(--muted); box-shadow: none; cursor: wait; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .play-btn svg { margin-left: 4px; }
+    .play-overlay p { color: var(--soft); font-size: 0.88rem; font-weight: 600; margin: 0; }
+
+    .grid-container { display: flex; justify-content: center; margin-bottom: 32px; }
+    .grid-5x5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: var(--panel-soft); padding: 8px; border-radius: var(--radius); border: 1px solid var(--line); }
+    .cell { width: 54px; height: 54px; background: var(--panel); border-radius: 6px; border: 2px dashed var(--line); display: grid; place-items: center; cursor: pointer; transition: all 0.1s ease; font-size: 1.8rem; user-select: none;}
+    .cell:hover { border-color: var(--accent); }
+    .cell.filled { border-style: solid; background: var(--panel-soft); }
+    .cell.error-highlight { border-color: var(--bad); background: var(--bad-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 30%, transparent); }
+    
+    .inventory-panel { display: flex; justify-content: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;}
+    .inv-slot { width: 64px; height: 72px; border-radius: var(--radius); border: 2px solid var(--line); background: var(--panel-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease; position: relative;}
+    .inv-slot:hover { transform: translateY(-2px); border-color: var(--soft); }
+    .inv-slot.active { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); background: var(--panel); }
+    .inv-slot.empty { opacity: 0.5; filter: grayscale(1); cursor: default; }
+    .inv-icon { font-size: 1.8rem; line-height: 1; }
+    .inv-count { font-size: 0.75rem; font-weight: 800; color: var(--muted); margin-top: 4px; }
+    
+    .rules-list { display: flex; flex-direction: column; gap: 8px; }
+    .rule-card { padding: 12px; border-radius: var(--radius); background: var(--panel-soft); border: 1px solid var(--line); font-size: 0.9rem; line-height: 1.5; color: var(--text); display: flex; gap: 10px; align-items: center; transition: all 0.2s ease;}
+    .rule-status { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted); transition: all 0.2s ease;}
+    .rule-card.met { background: var(--good-soft); border-color: color-mix(in srgb, var(--good) 40%, transparent); color: var(--good); font-weight: 600;}
+    .rule-card.met .rule-status { background: var(--good); border-color: var(--good); }
+    .rule-card.fail { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 40%, transparent); color: var(--bad); }
+    .rule-card.fail .rule-status { background: var(--bad); border-color: var(--bad); }
+
+    .action-row { display: flex; justify-content: center; margin-top: 24px; gap: 12px;}
+
+    /* Colors and Shapes */
+    .color-R { color: var(--c-red); }
+    .color-B { color: var(--c-blue); }
+    .color-G { color: var(--c-green); }
+    .color-Y { color: var(--c-yellow); }
+    .color-P { color: var(--c-purple); }
+
+    .inline-token {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 4px;
+      background: var(--panel); border: 1px solid var(--line);
+      font-size: 0.9rem; margin: 0 3px; vertical-align: text-bottom;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    /* --- NEXT GAME CARDS --- */
+    .next-games { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .next-game-card { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel-soft); text-decoration: none; color: var(--text); transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.12s ease; }
+    .next-game-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,99,235,0.12); }
+    .next-game-logo { width: 36px; height: 36px; border-radius: 8px; object-fit: contain; flex: 0 0 auto; }
+    .next-game-info strong { display: block; font-size: 0.9rem; font-weight: 750; }
+    .next-game-info span { font-size: 0.76rem; color: var(--muted); }
+    .next-games-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px; margin-bottom: 2px; }
+
+    /* Modals */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.48); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 50; }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: min(440px, 100%); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; z-index: 51; }
+    .modal h2 { margin: 0 0 8px; }
+    .modal p { color: var(--soft); line-height: 1.5; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px;}
+
+    /* Leaderboards & Comments */
+    .leader-row { min-height: 44px; border-radius: var(--radius); background: var(--panel-soft); border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; margin-bottom: 8px;}
+    .leader-person { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .leader-name { font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .time { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--accent); }
+    .avatar { width: 28px; height: 28px; border-radius: 999px; object-fit: cover; border: 1px solid var(--line); }
+
+    .postgame-panel { display: none; margin-top: 14px; }
+    .postgame-panel.visible { display: block; animation: fadeUp 0.22s ease-out both; }
+    .comment-form { display: grid; gap: 10px; }
+    .comment-textarea { width: 100%; min-height: 104px; resize: vertical; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel-soft); color: var(--text); padding: 12px; outline: 0; }
+    .comment-actions { display: flex; align-items: center; justify-content: space-between; }
+    .comment-list { display: grid; gap: 8px; margin-top: 12px; }
+    .comment-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-soft); padding: 10px 12px; }
+    .comment-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: var(--muted); font-size: 0.76rem; }
+    .comment-body { white-space: pre-wrap; line-height: 1.45; color: var(--text); font-size: 0.9rem; }
+    
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pop { 0% { transform: scale(0.8); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .animate-pop { animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+    .shake { animation: shake 0.4s ease-in-out; }
+
+    @media (max-width: 880px) { .game-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 620px) { 
+      .shell { width: min(100% - 16px, 1180px); padding-top: 16px; padding-bottom: 22px; }
+      .cell { width: 48px; height: 48px; font-size: 1.5rem; }
+      .game-tools { justify-content: space-between; width: 100%; }
+      .timer-box { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a href="index.html" class="brand">
+        <img src="BitsPlay.png" alt="Logo" class="brand-mark" style="background: transparent; object-fit: contain; padding: 2px;">
+        <div>
+          <h1>Gridrule</h1>
+          <p>Return to BitsPlay Hub</p>
+        </div>
+      </a>
+      <div class="top-actions">
+        <button class="btn icon" id="themeBtn" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 3v2.2M12 18.8V21M4.8 4.8l1.55 1.55M17.65 17.65l1.55 1.55M3 12h2.2M18.8 12H21M4.8 19.2l1.55-1.55M17.65 6.35l1.55-1.55" />
+            <circle cx="12" cy="12" r="3.6" />
+          </svg>
+        </button>
+        <button class="btn" id="authBtn" type="button"><span id="authLabel">Sign in</span></button>
+      </div>
+    </header>
+
+    <div class="game-layout">
+      <section class="play-area">
+        <div class="game-header">
+          <div>
+            <h2 id="puzzleDateTitle">Gridrule</h2>
+            <p>Place exactly 5 of each token type onto the grid. Satisfy all the logic rules on the right to complete the puzzle.</p>
+          </div>
+          <div class="game-tools">
+            <button class="btn" id="hintBtn" type="button">Hint</button>
+            <div class="timer-box" id="timer">00:00</div>
+          </div>
+        </div>
+
+        <div class="level-indicator" id="levelIndicator">Daily Puzzle</div>
+
+        <!-- Play overlay wraps the grid + inventory so it covers both -->
+        <div class="grid-wrapper">
+          <div class="play-overlay" id="playOverlay">
+            <button class="play-btn" id="playBtn" aria-label="Start game" data-locked="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+            </button>
+            <p id="playOverlayMsg">Checking your progress…</p>
+          </div>
+
+          <div class="grid-container">
+            <div class="grid-5x5" id="gameGrid"></div>
+          </div>
+
+          <div class="inventory-panel" id="inventoryPanel"></div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn primary" id="checkBtn" style="min-width: 160px;">Check Board</button>
+          <button class="btn primary" id="persistentShareBtn" style="display: none; min-width: 160px;">Share Result</button>
+        </div>
+      </section>
+
+      <aside class="drawer">
+        <section class="side-panel">
+          <div class="section-title">
+            <h3>Logic Rules</h3>
+            <span class="small" id="progressText">0/25 Placed</span>
+          </div>
+          <div class="rules-list" id="rulesList"></div>
+        </section>
+
+        <section class="side-panel" id="gameLeaderboardPanel">
+          <div class="section-title">
+            <h3>Leaderboard</h3>
+          </div>
+          <div class="small" id="leaderboardLocked" style="margin-bottom: 8px;">Finish the puzzle to unlock today's board.</div>
+          <div class="leader-list" id="gameLeaderboard"></div>
+        </section>
+      </aside>
+    </div>
+
+    <section class="side-panel postgame-panel" id="commentPanel">
+      <div class="section-title">
+        <h3>Comment</h3>
+        <span class="small" id="commentMeta">After your run</span>
+      </div>
+      <form class="comment-form" id="commentForm">
+        <textarea class="comment-textarea" id="commentInput" maxlength="280" placeholder="How did today's grid feel?"></textarea>
+        <div class="comment-actions">
+          <div class="small" id="commentStatus"></div>
+          <button class="btn primary" id="commentSubmitBtn" type="submit">Post comment</button>
+        </div>
+      </form>
+      <div class="comment-list" id="commentList"></div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="finishModal">
+    <div class="modal">
+      <h2 id="finishTitle">Gridrule Complete</h2>
+      <p id="finishCopy"></p>
+      <div class="modal-actions">
+        <button class="btn" id="closeModalBtn">Close</button>
+        <button class="btn primary" id="shareBtn">Share Result</button>
+      </div>
+      <p class="next-games-label">Play another game</p>
+      <div class="next-games">
+        <a href="circuit.html" class="next-game-card">
+          <img src="Circuit.png" alt="Circuit Logo" class="next-game-logo">
+          <div class="next-game-info">
+            <strong>Circuit</strong>
+            <span>Fill the operator slots</span>
+          </div>
+        </a>
+        <a href="reworded.html" class="next-game-card">
+          <img src="ReWorded.png" alt="ReWorded Logo" class="next-game-logo">
+          <div class="next-game-info">
+            <strong>ReWorded</strong>
+            <span>Solve clues, find the word</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // ==========================================
+    // 0. CONFIG & CONSTANTS
+    // ==========================================
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBXh3V4n1aOcvjZQjo65gzeStApV1RKWak",
+      authDomain: "bitsplay-c4e24.firebaseapp.com",
+      projectId: "bitsplay-c4e24",
+      storageBucket: "bitsplay-c4e24.firebasestorage.app",
+      messagingSenderId: "136928912243",
+      appId: "1:136928912243:web:8a154edc72b3081184db06"
+    };
+
+    const SHAPES = {
+      'R': { icon: '●', name: 'Red Circle',    cls: 'color-R' },
+      'B': { icon: '■', name: 'Blue Square',   cls: 'color-B' },
+      'G': { icon: '▲', name: 'Green Triangle',cls: 'color-G' },
+      'Y': { icon: '★', name: 'Yellow Star',   cls: 'color-Y' },
+      'P': { icon: '◆', name: 'Purple Diamond',cls: 'color-P' }
+    };
+    const COLORS = ['R', 'B', 'G', 'Y', 'P'];
+
+    // ==========================================
+    // 1. AUDIO & VISUAL ENGINE
+    // ==========================================
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    function unlockAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); document.body.removeEventListener('click', unlockAudio); }
+    document.body.addEventListener('click', unlockAudio);
+
+    function playTone(freq, type, duration, vol = 0.1, delay = 0) {
+      try {
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+        gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + duration);
+      } catch (e) { }
+    }
+    function playSound(type) {
+      if (type === 'place')  { playTone(400, 'sine', 0.05, 0.02); }
+      if (type === 'reveal') { playTone(523.25, 'sine', 0.1, 0.05); playTone(659.25, 'sine', 0.15, 0.05, 0.08); }
+      if (type === 'win')    { playTone(440, 'triangle', 0.2, 0.08, 0); playTone(554.37, 'triangle', 0.2, 0.08, 0.1); playTone(659.25, 'triangle', 0.2, 0.08, 0.2); playTone(880, 'triangle', 0.4, 0.08, 0.3); }
+      if (type === 'error')  { playTone(200, 'square', 0.1, 0.03); playTone(150, 'square', 0.15, 0.03, 0.1); }
+    }
+
+    function fireConfetti() {
+      const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7'];
+      for (let i = 0; i < 80; i++) {
+        const conf = document.createElement('div');
+        conf.style.cssText = `position:fixed;width:${Math.random()*8+4}px;height:${Math.random()*8+4}px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${Math.random()*100}vw;top:-10px;border-radius:${Math.random()>0.5?'50%':'2px'};z-index:9999;pointer-events:none`;
+        document.body.appendChild(conf);
+        const fall = Math.random() * 2 + 1.5;
+        conf.animate([{ transform:'translate3d(0,0,0) rotate(0deg)', opacity:1 }, { transform:`translate3d(${(Math.random()-0.5)*300}px,100vh,0) rotate(${Math.random()*720}deg)`, opacity:0 }], { duration:fall*1000, easing:'cubic-bezier(.37,0,.63,1)', fill:'forwards' });
+        setTimeout(() => conf.remove(), fall * 1000);
+      }
+    }
+
+    // ==========================================
+    // 2. PUZZLE GENERATOR (Seeded Daily)
+    // ==========================================
+    function xmur3(str) {
+      let h = 1779033703 ^ str.length;
+      for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+      return function() { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return (h ^= h >>> 16) >>> 0; }
+    }
+    function mulberry32(a) { return function() { var t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+
+    function getOrthogonal(idx) {
+      const n = []; const r = Math.floor(idx/5); const c = idx%5;
+      if (r > 0) n.push(idx - 5); if (r < 4) n.push(idx + 5);
+      if (c > 0) n.push(idx - 1); if (c < 4) n.push(idx + 1);
+      return n;
+    }
+    function isEdge(idx)   { const r = Math.floor(idx/5); const c = idx%5; return r===0 || r===4 || c===0 || c===4; }
+    function isCorner(idx) { return idx===0 || idx===4 || idx===20 || idx===24; }
+
+    function generateDailyPuzzle(dateStr) {
+      const rng = mulberry32(xmur3(dateStr)());
+      const getShapeHTML = (c) => `<span class="inline-token ${SHAPES[c].cls}">${SHAPES[c].icon}</span>`;
+
+      let roles = [...COLORS].sort(() => rng() - 0.5);
+      let [c1, c2, c3, c4, c5] = roles;
+
+      return { rules: [
+        { type: 'MAX_LINE',   color: c1,             max: 2, text: `No more than 2 ${getShapeHTML(c1)} in any row or column.` },
+        { type: 'NO_TOUCH',   c1: c2,   c2: c3,             text: `${getShapeHTML(c2)} cannot touch ${getShapeHTML(c3)} (up, down, left, right).` },
+        { type: 'ONLY_EDGE',  color: c4,                    text: `${getShapeHTML(c4)} can only be placed on the outer edges.` },
+        { type: 'MUST_TOUCH', c1: c5,   c2: c1,             text: `Every ${getShapeHTML(c5)} must touch at least one ${getShapeHTML(c1)}.` },
+        { type: 'NO_CORNER',  c1: c2,   c2: c4,             text: `Corners cannot contain ${getShapeHTML(c2)} or ${getShapeHTML(c4)}.` },
+        { type: 'MAX_LINE',   color: c3,             max: 2, text: `No more than 2 ${getShapeHTML(c3)} in any row or column.` }
+      ]};
+    }
+
+    // ==========================================
+    // 3. GAME STATE
+    // ==========================================
+    const STORAGE_KEY = "gridrule_games_v1";
+    const THEME_KEY   = "daily_games_theme";
+    function toLocalISODate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+    const todayISO = toLocalISODate(new Date());
+    const $ = (id) => document.getElementById(id);
+    const escapeHtml = (v) => String(v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+
+    let firebase = null; let user = null;
+    let dailyPuzzle = generateDailyPuzzle(todayISO);
+    let appState = {};
+    let grid = new Array(25).fill(null);
+    let inventory = { R:5, B:5, G:5, Y:5, P:5 };
+    let activeBrush = null;
+    let timerHandle = null; let elapsed = 0; let startedAt = null; let lastSyncTime = -1;
+    let gameStarted = false; // true once Play is pressed
+    let hintCooldown = 0; let hintTimerHandle = null;
+    let cloudComments = []; let leaderboardUnsub = null; let commentsUnsub = null;
+
+    function currentPlayerId() { return user?.uid || localStorage.getItem("guest_uid") || "guest"; }
+
+    function loadStateForDate() {
+      if (!localStorage.getItem("guest_uid")) localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));
+      let parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      if (parsed.date !== todayISO) return { date: todayISO, elapsed: 0, finished: false, leaderboard: parsed.leaderboard || [], results: parsed.results || {} };
+      return { date: todayISO, elapsed: parsed.elapsed || 0, finished: parsed.finished || false, leaderboard: parsed.leaderboard || [], results: parsed.results || {} };
+    }
+
+    function saveState() {
+      appState.elapsed = elapsed;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      if (firebase && user) {
+        firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), { gridrule_state: appState, gridrule_results: appState.results, updatedAt: firebase.serverTimestamp() }, { merge: true });
+      }
+    }
+
+    const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,"0")}:${Math.floor(s%60).toString().padStart(2,"0")}`;
+
+    // Single continuous timer — only stopped when the game is won
+    function startTimer() {
+      if (appState.finished || timerHandle) return;
+      startedAt = Date.now() - elapsed * 1000;
+      timerHandle = setInterval(() => {
+        elapsed = Math.floor((Date.now() - startedAt) / 1000);
+        $("timer").textContent = formatTime(elapsed);
+        if (elapsed > 0 && elapsed % 5 === 0 && elapsed !== lastSyncTime) { lastSyncTime = elapsed; saveState(); }
+      }, 250);
+    }
+    function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; saveState(); }
+
+    // On mobile: re-anchor startedAt when returning to the tab so clock never drifts
+    document.addEventListener("visibilitychange", () => {
+      if (appState.finished || !gameStarted) return;
+      if (!document.hidden && !timerHandle) {
+        startedAt = Date.now() - elapsed * 1000;
+        timerHandle = setInterval(() => {
+          elapsed = Math.floor((Date.now() - startedAt) / 1000);
+          $("timer").textContent = formatTime(elapsed);
+          if (elapsed > 0 && elapsed % 5 === 0 && elapsed !== lastSyncTime) { lastSyncTime = elapsed; saveState(); }
+        }, 250);
+      }
+    });
+
+    // ==========================================
+    // 4. RENDER ENGINE & LOGIC
+    // ==========================================
+    function initLevel() {
+      $("timer").textContent = formatTime(elapsed);
+      const startDate = new Date("2026-05-15T00:00:00");
+      const puzzleNum = Math.max(1, Math.floor((new Date(`${todayISO}T00:00:00`) - startDate) / 86400000) + 1);
+      $("puzzleDateTitle").textContent = `Gridrule #${puzzleNum}`;
+
+      if (appState.finished) { renderFinishedState(); return; }
+
+      $("checkBtn").textContent = "Check Board"; $("checkBtn").style.display = "";
+      $("hintBtn").style.display = "";
+
+      grid = new Array(25).fill(null);
+      inventory = { R:5, B:5, G:5, Y:5, P:5 };
+      activeBrush = 'R';
+
+      // Show Play overlay only on first-ever visit (not mid-game, not finished)
+      const overlay = $("playOverlay");
+      if (!gameStarted) {
+        overlay.classList.remove('hidden');
+      } else {
+        overlay.classList.add('hidden');
+      }
+
+      updateHintButton();
+      renderGrid();
+      renderInventory();
+      renderRules();
+    }
+
+    // Play button: locked until Firebase confirms no prior finish today
+    $("playBtn").addEventListener('click', () => {
+      if ($("playBtn").dataset.locked === "true") return;
+      gameStarted = true;
+      $("playOverlay").classList.add('hidden');
+      startTimer();
+    });
+
+    function renderGrid() {
+      const container = $("gameGrid"); container.innerHTML = '';
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement('div');
+        cell.className = `cell ${grid[i] ? 'filled animate-pop' : ''}`;
+        if (grid[i]) cell.innerHTML = `<span class="${SHAPES[grid[i]].cls}">${SHAPES[grid[i]].icon}</span>`;
+        cell.onclick = () => handleCellClick(i);
+        container.appendChild(cell);
+      }
+      $("progressText").textContent = `${grid.filter(c=>c).length}/25 Placed`;
+      evaluateRulesLive();
+    }
+
+    function renderInventory() {
+      const container = $("inventoryPanel"); container.innerHTML = '';
+      COLORS.forEach(c => {
+        const slot = document.createElement('div');
+        slot.className = `inv-slot ${activeBrush===c?'active':''} ${inventory[c]===0?'empty':''}`;
+        slot.innerHTML = `<div class="inv-icon ${SHAPES[c].cls}">${SHAPES[c].icon}</div><div class="inv-count">${inventory[c]}</div>`;
+        slot.onclick = () => { if (inventory[c] > 0) { activeBrush = c; renderInventory(); } };
+        container.appendChild(slot);
+      });
+      if (inventory[activeBrush] === 0) {
+        const next = COLORS.find(col => inventory[col] > 0);
+        activeBrush = next || null;
+        if (next) renderInventory();
+      }
+    }
+
+    function renderRules() {
+      const container = $("rulesList"); container.innerHTML = '';
+      dailyPuzzle.rules.forEach((rule, idx) => {
+        const div = document.createElement('div');
+        div.className = 'rule-card'; div.id = `rule-${idx}`;
+        div.innerHTML = `<div class="rule-status"></div><div>${rule.text}</div>`;
+        container.appendChild(div);
+      });
+    }
+
+    function handleCellClick(i) {
+      if (appState.finished) return;
+      // Remove token
+      if (grid[i]) {
+        const c = grid[i]; grid[i] = null; inventory[c]++;
+        playSound('place');
+        if (!activeBrush) activeBrush = c;
+        renderGrid(); renderInventory();
+        return;
+      }
+      // Place token
+      if (!grid[i] && activeBrush && inventory[activeBrush] > 0) {
+        grid[i] = activeBrush; inventory[activeBrush]--;
+        playSound('place');
+        renderGrid(); renderInventory();
+      }
+    }
+
+    // Returns indices of cells that are currently breaking a rule
+    function getViolatingCells() {
+      let bad = new Set();
+      dailyPuzzle.rules.forEach(rule => {
+        if (rule.type === 'MAX_LINE') {
+          for (let r=0;r<5;r++) { let cs=[]; for(let c=0;c<5;c++) if(grid[r*5+c]===rule.color) cs.push(r*5+c); if(cs.length>rule.max) cs.forEach(c=>bad.add(c)); }
+          for (let c=0;c<5;c++) { let cs=[]; for(let r=0;r<5;r++) if(grid[r*5+c]===rule.color) cs.push(r*5+c); if(cs.length>rule.max) cs.forEach(c=>bad.add(c)); }
+        }
+        else if (rule.type === 'NO_TOUCH') {
+          for (let i=0;i<25;i++) { if(grid[i]===rule.c1) getOrthogonal(i).forEach(n=>{if(grid[n]===rule.c2){bad.add(i);bad.add(n);}}); }
+        }
+        else if (rule.type === 'ONLY_EDGE') {
+          for (let i=0;i<25;i++) { if(grid[i]===rule.color && !isEdge(i)) bad.add(i); }
+        }
+        else if (rule.type === 'NO_CORNER') {
+          for (let i=0;i<25;i++) { if(isCorner(i) && (grid[i]===rule.c1||grid[i]===rule.c2)) bad.add(i); }
+        }
+        else if (rule.type === 'MUST_TOUCH') {
+          // Only flag if the piece is completely surrounded (no empty neighbour to save it)
+          for (let i=0;i<25;i++) {
+            if (grid[i]===rule.c1) {
+              let touches=false, hasEmpty=false;
+              getOrthogonal(i).forEach(n=>{if(grid[n]===rule.c2)touches=true; if(grid[n]===null)hasEmpty=true;});
+              if (!touches && !hasEmpty) bad.add(i);
+            }
+          }
+        }
+      });
+      return Array.from(bad);
+    }
+
+    function evaluateRulesLive() {
+      let allMet = true;
+      const totalPlaced = grid.filter(c=>c).length;
+
+      dailyPuzzle.rules.forEach((rule, idx) => {
+        let fail = false; let pending = false;
+
+        if (rule.type === 'MAX_LINE') {
+          for(let r=0;r<5;r++){let cnt=0;for(let c=0;c<5;c++) if(grid[r*5+c]===rule.color) cnt++;if(cnt>rule.max)fail=true;}
+          for(let c=0;c<5;c++){let cnt=0;for(let r=0;r<5;r++) if(grid[r*5+c]===rule.color) cnt++;if(cnt>rule.max)fail=true;}
+        }
+        else if (rule.type === 'NO_TOUCH') {
+          for(let i=0;i<25;i++){if(grid[i]===rule.c1) getOrthogonal(i).forEach(n=>{if(grid[n]===rule.c2)fail=true;});}
+        }
+        else if (rule.type === 'ONLY_EDGE') {
+          for(let i=0;i<25;i++){if(grid[i]===rule.color && !isEdge(i))fail=true;}
+        }
+        else if (rule.type === 'MUST_TOUCH') {
+          if (totalPlaced === 25) {
+            for(let i=0;i<25;i++){if(grid[i]===rule.c1){let t=false;getOrthogonal(i).forEach(n=>{if(grid[n]===rule.c2)t=true;});if(!t)fail=true;}}
+          } else { pending = true; }
+        }
+        else if (rule.type === 'NO_CORNER') {
+          for(let i=0;i<25;i++){if(isCorner(i)&&(grid[i]===rule.c1||grid[i]===rule.c2))fail=true;}
+        }
+
+        const el = $(`rule-${idx}`);
+        if (el) {
+          el.className = 'rule-card ' + (fail ? 'fail' : (!pending && totalPlaced===25 ? 'met' : ''));
+        }
+        if (fail || pending) allMet = false;
+      });
+
+      return totalPlaced === 25 && allMet;
+    }
+
+    // --- HINT SYSTEM ---
+    // The Hint button highlights any cells currently breaking a rule in red.
+    // If nothing is broken yet, it says "No conflicts!" instead.
+    // There's a 15-second cooldown between hints.
+    function updateHintButton() {
+      const btn = $("hintBtn"); if (!btn) return;
+      btn.disabled = appState.finished || hintCooldown > 0;
+      btn.textContent = hintCooldown > 0 ? `Hint ${hintCooldown}s` : "Hint";
+    }
+
+    function startHintCooldown() {
+      hintCooldown = 15; updateHintButton();
+      if (hintTimerHandle) clearInterval(hintTimerHandle);
+      hintTimerHandle = setInterval(() => {
+        hintCooldown = Math.max(0, hintCooldown - 1); updateHintButton();
+        if (hintCooldown === 0) clearInterval(hintTimerHandle);
+      }, 1000);
+    }
+
+    $("hintBtn").addEventListener('click', () => {
+      if (appState.finished || hintCooldown > 0) return;
+      const bad = getViolatingCells();
+      if (bad.length > 0) {
+        playSound('error');
+        bad.forEach(i => {
+          const el = $("gameGrid").children[i];
+          el.classList.add("error-highlight", "shake");
+          setTimeout(() => el.classList.remove("error-highlight", "shake"), 800);
+        });
+      } else {
+        $("hintBtn").textContent = "No conflicts!";
+        setTimeout(() => { if (hintCooldown === 0) $("hintBtn").textContent = "Hint"; }, 2000);
+      }
+      startHintCooldown();
+    });
+
+    $("checkBtn").addEventListener('click', () => {
+      if (appState.finished) return;
+      if (grid.filter(c=>c).length < 25) { $("gameGrid").classList.remove('shake'); void $("gameGrid").offsetWidth; $("gameGrid").classList.add('shake'); playSound('error'); return; }
+      if (evaluateRulesLive()) {
+        playSound('reveal'); stopTimer(); appState.finished = true; saveState(); finishGame();
+      } else {
+        $("gameGrid").classList.remove('shake'); void $("gameGrid").offsetWidth; $("gameGrid").classList.add('shake'); playSound('error');
+      }
+    });
+
+    function finishGame() {
+      playSound('win'); fireConfetti(); renderFinishedState();
+      $("finishCopy").textContent = `You completed Gridrule in ${formatTime(elapsed)}.`;
+      $("finishModal").classList.add("open");
+      const pid = currentPlayerId();
+      const result = { time: elapsed, at: Date.now(), name: user?.displayName || "Guest Player", uid: pid, photoURL: user?.photoURL || "" };
+      appState.results = appState.results || {}; appState.results[`${pid}::${todayISO}`] = result;
+      saveState(); syncResult(result);
+    }
+
+    function renderFinishedState() {
+      $("levelIndicator").textContent = "Systems Secured";
+      $("checkBtn").style.display = "none"; $("hintBtn").style.display = "none";
+      $("playOverlay").classList.add('hidden'); // always hide overlay when finished
+      if ($("persistentShareBtn")) $("persistentShareBtn").style.display = "";
+      $("gameLeaderboard").style.display = ""; $("leaderboardLocked").style.display = "none";
+      $("inventoryPanel").style.display = "none";
+      renderLeaderboards(); renderComments();
+    }
+
+    // ==========================================
+    // 5. CLOUD & FIREBASE
+    // ==========================================
+    async function submitComment(e) {
+      e.preventDefault(); const text = $("commentInput").value.trim(); if (!text || !firebase) return;
+      $("commentSubmitBtn").disabled = true; $("commentStatus").textContent = "Posting…";
+      try {
+        await firebase.setDoc(firebase.doc(firebase.db, "comments", `gridrule_${todayISO}_${currentPlayerId()}_${Date.now()}`), {
+          puzzleId: todayISO, uid: currentPlayerId(), name: user?.displayName || "Guest Player",
+          photoURL: user?.photoURL || "", text, game: "gridrule",
+          createdAtMs: Date.now(), updatedAt: firebase.serverTimestamp()
+        });
+        $("commentInput").value = ""; $("commentStatus").textContent = "Posted!"; $("commentStatus").style.color = "var(--good)";
+      } catch { $("commentStatus").textContent = "Failed."; $("commentStatus").style.color = "var(--bad)"; }
+      finally { $("commentSubmitBtn").disabled = false; }
+    }
+
+    function renderComments() {
+      const panel = $("commentPanel"); if (!panel) return;
+      panel.classList.toggle("visible", !!appState.finished);
+      $("commentList").innerHTML = cloudComments.length
+        ? cloudComments.map(c => {
+            const img = c.photoURL ? `<img src="${c.photoURL}" class="avatar" style="width:20px;height:20px;margin-right:6px;">` : `<div class="avatar" style="width:20px;height:20px;margin-right:6px;background:var(--line);display:inline-block;"></div>`;
+            return `<article class="comment-card"><div class="comment-meta"><span style="display:flex;align-items:center;">${img}<strong>${escapeHtml(c.name)}</strong></span><span>${escapeHtml(c.dateLabel)}</span></div><div class="comment-body">${escapeHtml(c.text)}</div></article>`;
+          }).join("")
+        : !!appState.finished ? `<div class="small">No comments yet. Start the chatter.</div>` : "";
+    }
+
+    function renderLeaderboards() {
+      const rows = appState.leaderboard || [];
+      $("gameLeaderboard").innerHTML = rows.length
+        ? rows.map((e, i) => {
+            const img = e.photoURL ? `<img class="avatar" src="${e.photoURL}" alt="">` : '';
+            return `<div class="leader-row"><div class="leader-person"><span style="font-weight:750;color:var(--muted);margin-right:6px;width:18px;">${i+1}.</span>${img}<div class="leader-name">${escapeHtml(e.name||"Player")}</div></div><div class="time">${formatTime(e.time)}</div></div>`;
+          }).join("")
+        : `<div class="small">No finishes yet. Be the first!</div>`;
+    }
+
+    async function syncResult(res) {
+      if (!firebase) return;
+      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", `gridrule-${todayISO}`, "entries", res.uid), { ...res, puzzleId: todayISO, game: "gridrule", updatedAt: firebase.serverTimestamp() }, { merge: true });
+    }
+
+    async function initFirebase() {
+      try {
+        const [{ initializeApp }, { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut }, { getFirestore, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where }] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
+        ]);
+        firebase = { auth: getAuth(initializeApp(FIREBASE_CONFIG)), db: getFirestore(), provider: new GoogleAuthProvider(), signInWithPopup, signOut, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where };
+
+        onAuthStateChanged(firebase.auth, (account) => {
+          user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
+          $("authLabel").textContent = user ? (user.displayName.split(" ")[0]) : "Sign in";
+
+          if (!account) {
+            // Guest — unlock Play immediately, no cloud check needed
+            const btn = $("playBtn");
+            if (btn && !appState.finished) { btn.dataset.locked = "false"; $("playOverlayMsg").textContent = "Press Play to start the timer"; }
+          }
+
+          if (account) {
+            firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.gridrule_results) {
+                  appState.results = { ...(appState.results || {}), ...data.gridrule_results };
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                }
+                const remote = data.gridrule_state;
+                if (remote && remote.date === todayISO && remote.finished && !appState.finished) {
+                  // Cloud says finished — lock this device immediately
+                  stopTimer();
+                  gameStarted = true;
+                  appState = { ...remote };
+                  elapsed = appState.elapsed || 0;
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                  initLevel(); // renders finished state, hides overlay
+                  return;
+                }
+              }
+              // Unlock Play now that we've confirmed cloud state
+              const btn = $("playBtn");
+              if (btn && !appState.finished) { btn.dataset.locked = "false"; $("playOverlayMsg").textContent = "Press Play to start the timer"; }
+            }, () => {
+              // Firestore read error (new user, no doc yet) — unlock anyway
+              const btn = $("playBtn");
+              if (btn && !appState.finished) { btn.dataset.locked = "false"; $("playOverlayMsg").textContent = "Press Play to start the timer"; }
+            });
+          }
+
+          // Leaderboard listener
+          if (leaderboardUnsub) leaderboardUnsub();
+          leaderboardUnsub = firebase.onSnapshot(
+            firebase.query(firebase.collection(firebase.db, "leaderboards", `gridrule-${todayISO}`, "entries"), firebase.orderBy("time", "asc"), firebase.limit(10)),
+            (snap) => { appState.leaderboard = snap.docs.map(d => d.data()); saveState(); if (appState.finished) renderLeaderboards(); }
+          );
+
+          // Comments listener
+          if (commentsUnsub) commentsUnsub();
+          commentsUnsub = firebase.onSnapshot(
+            firebase.query(firebase.collection(firebase.db, "comments"), firebase.where("puzzleId", "==", todayISO), firebase.where("game", "==", "gridrule"), firebase.limit(50)),
+            (snap) => {
+              cloudComments = snap.docs.map(d => { const e = d.data(); return { uid: e.uid, name: e.name||"Player", photoURL: e.photoURL||"", text: e.text||"", createdAt: e.createdAtMs||0, dateLabel: e.createdAtMs ? new Date(e.createdAtMs).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) : "" }; }).sort((a,b) => b.createdAt - a.createdAt);
+              renderComments();
+            }
+          );
+        });
+      } catch (e) {
+        console.warn("Firebase unavailable", e);
+        // Firebase totally failed — unlock Play so game isn't stuck
+        const btn = $("playBtn");
+        if (btn && !appState.finished) { btn.dataset.locked = "false"; $("playOverlayMsg").textContent = "Press Play to start the timer"; }
+      }
+    }
+
+    // Safety net: if Firebase auth takes >5s, unlock anyway
+    setTimeout(() => {
+      const btn = $("playBtn");
+      if (btn && btn.dataset.locked === "true" && !appState.finished) {
+        btn.dataset.locked = "false";
+        $("playOverlayMsg").textContent = "Press Play to start the timer";
+      }
+    }, 5000);
+
+    // ==========================================
+    // 6. UI LISTENERS & BOOT
+    // ==========================================
+    if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
+    $("themeBtn").addEventListener('click', () => { document.body.classList.toggle("dark"); localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light"); });
+    $("authBtn").addEventListener("click", async () => { if (!firebase) return; try { if (firebase.auth.currentUser) await firebase.signOut(firebase.auth); else await firebase.signInWithPopup(firebase.auth, firebase.provider); } catch(e) {} });
+    $("closeModalBtn").addEventListener("click", () => $("finishModal").classList.remove("open"));
+
+    const doShare = () => {
+      const text = `Gridrule\nI completed today's grid in ${formatTime(elapsed)}.\njenishestmoizavut.github.io/BitsPlay/gridrule.html`;
+      if (navigator.share) navigator.share({ text }).catch(()=>{});
+      else { navigator.clipboard?.writeText(text); $("finishCopy").textContent = "Copied to clipboard."; }
+    };
+    $("shareBtn").addEventListener("click", doShare);
+    if ($("persistentShareBtn")) $("persistentShareBtn").addEventListener("click", doShare);
+    $("commentForm").addEventListener("submit", submitComment);
+
+    // Boot — if already mid-game, skip Play overlay and resume timer
+    appState = loadStateForDate();
+    elapsed = appState.elapsed;
+    if (appState.elapsed > 0 || appState.finished) gameStarted = true;
+    initLevel();
+    if (gameStarted && !appState.finished) startTimer();
+    initFirebase();
+  </script>
+</body>
+</html>
