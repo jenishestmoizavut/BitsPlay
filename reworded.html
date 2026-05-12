@@ -1,792 +1,776 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#f7f8fb" />
-  <meta name="application-name" content="BitsPlay" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="BitsPlay" />
-
-  <title>ReWorded | BitsPlay</title>
-  <meta name="description" content="Play ReWorded: solve five clues, reveal five letters, and find the hidden word.">
-
-  <link rel="canonical" href="https://jenishestmoizavut.github.io/BitsPlay/reworded.html" />
-  <link rel="icon" type="image/png" href="BitsPlay.png" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="BitsPlay.png" />
-
-  <style>
-    :root {
-      --bg: #f7f8fb; --panel: #ffffff; --panel-soft: #f1f5f9; --line: #dfe5ee;
-      --text: #111827; --soft: #526174; --muted: #7b8797;
-      --accent: #2563eb; --accent-soft: #e9f1ff;
-      --good: #16803c; --good-soft: #e8f7ee;
-      --warn: #a15c07; --warn-soft: #fff3dc;
-      --bad: #b42318; --shadow: 0 20px 50px rgba(15, 23, 42, 0.09);
-      --radius: 8px;
-    }
-
-    body.dark {
-      --bg: #0b1020; --panel: #11182a; --panel-soft: #172033; --line: #273349;
-      --text: #edf2f8; --soft: #bec9d8; --muted: #91a0b4;
-      --accent: #60a5fa; --accent-soft: #132944;
-      --good: #5ee08a; --good-soft: #123420;
-      --warn: #f7bd59; --warn-soft: #38280e;
-      --bad: #ff8f87; --shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    }
-
-    * { box-sizing: border-box; }
-    html, body { min-height: 100%; margin: 0; }
-    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; letter-spacing: 0; }
-
-    button, input { font: inherit; }
-    button { border: 0; cursor: pointer; color: inherit; }
-    button:disabled { cursor: default; opacity: 0.55; }
-    a { text-decoration: none; color: inherit; }
-
-    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 36px; }
-
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
-    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .brand-mark { width: 34px; height: 34px; border-radius: var(--radius); display: grid; place-items: center; background: var(--accent); color: white; font-weight: 800; flex: 0 0 auto; }
-    .brand h1 { font-size: 1.05rem; line-height: 1.1; margin: 0; }
-    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; }
-    .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-
-    .btn { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 999px; padding: 8px 13px; background: var(--panel-soft); color: var(--soft); border: 1px solid var(--line); font-weight: 650; font-size: 0.86rem; transition: transform 0.12s ease, border-color 0.12s ease; }
-    .btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent); }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
-    .btn.good { background: var(--good); border-color: var(--good); color: white; }
-    .btn.icon { width: 38px; padding: 0; }
-
-    .avatar { width: 28px; height: 28px; border-radius: 999px; object-fit: cover; border: 1px solid var(--line); }
-
-    .game-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
-    .play-area { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-    
-    .game-header { padding: 18px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-    .game-header h2 { margin: 0 0 5px; font-size: clamp(1.5rem, 3vw, 2.25rem); letter-spacing: 0; }
-    .game-header p { margin: 0; color: var(--soft); max-width: 680px; line-height: 1.45; }
-    .game-tools { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-    .timer-box { min-width: 94px; text-align: right; font-size: 1.45rem; font-variant-numeric: tabular-nums; font-weight: 850; color: var(--accent); }
-
-    .letters-board { padding: 18px; display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; background: var(--panel-soft); border-bottom: 1px solid var(--line); }
-    .letter-tile { width: 54px; aspect-ratio: 1; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); display: grid; place-items: center; color: var(--muted); font-size: 1.65rem; font-weight: 850; transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease; flex: 0 0 auto; }
-    .letter-tile.revealed { background: var(--good-soft); color: var(--good); transform: translateY(-1px); animation: popReveal 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-
-    .clues { padding: 18px; display: grid; gap: 10px; }
-    .clue-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 180px; gap: 10px; align-items: center; padding: 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); transition: background 0.3s ease, border-color 0.3s ease; }
-    .clue-number { width: 30px; height: 30px; border-radius: 999px; background: var(--panel-soft); display: grid; place-items: center; color: var(--soft); font-weight: 800; font-size: 0.82rem; }
-    .clue-row.solved { border-color: color-mix(in srgb, var(--good) 34%, var(--line)); background: var(--good-soft); }
-    .clue-text { color: var(--text); line-height: 1.42; font-size: 0.94rem; }
-
-    .answer-input { width: 100%; border: 1px solid var(--line); border-radius: var(--radius); min-height: 38px; padding: 8px 10px; background: var(--panel); color: var(--text); outline: 0; }
-    .answer-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
-
-    .final-answer { border-top: 1px solid var(--line); padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--panel); }
-    .final-answer input { width: 100%; min-height: 44px; padding: 9px 12px; border-radius: var(--radius); border: 1px solid var(--line); outline: 0; background: var(--panel-soft); color: var(--text); font-size: 1rem; text-transform: uppercase; font-weight: 750; letter-spacing: 0; }
-
-    .message { grid-column: 1 / -1; min-height: 20px; color: var(--muted); font-size: 0.86rem; }
-    .message.good { color: var(--good); font-weight: 750; }
-    .message.bad { color: var(--bad); font-weight: 750; }
-
-    .drawer { display: flex; flex-direction: column; gap: 14px; }
-    .side-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
-    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-    .section-title h3 { margin: 0; font-size: 1rem; }
-    .small { color: var(--muted); font-size: 0.8rem; }
-
-    .progress-meter { height: 8px; background: var(--panel-soft); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
-    .progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s ease; }
-
-    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    .pill { border: 1px solid var(--line); background: var(--panel-soft); color: var(--soft); border-radius: 999px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; }
-
-    .leaderboard-locked { color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
-    .leader-list { display: flex; flex-direction: column; gap: 8px; }
-    .leader-row { min-height: 44px; border-radius: var(--radius); background: var(--panel-soft); border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; }
-    .leader-person { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .leader-name { font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .hint-box { background: var(--warn-soft); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 20%, transparent); border-radius: var(--radius); padding: 10px; font-size: 0.84rem; line-height: 1.45; }
-
-    .postgame-panel { display: none; margin-top: 14px; }
-    .postgame-panel.visible { display: block; animation: fadeUp 0.22s ease-out both; }
-
-    .comment-form { display: grid; gap: 10px; }
-    .comment-textarea { width: 100%; min-height: 104px; resize: vertical; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel-soft); color: var(--text); padding: 12px; outline: 0; line-height: 1.45; }
-    .comment-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
-    .comment-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .comment-status { min-height: 18px; color: var(--muted); font-size: 0.8rem; }
-    .comment-status.good { color: var(--good); font-weight: 700; }
-    .comment-status.bad { color: var(--bad); font-weight: 700; }
-    .comment-list { display: grid; gap: 8px; margin-top: 12px; }
-    .comment-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-soft); padding: 10px 12px; }
-    .comment-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: var(--muted); font-size: 0.76rem; }
-    .comment-body { white-space: pre-wrap; line-height: 1.45; color: var(--text); font-size: 0.9rem; }
-
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.48); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 50; }
-    .modal-backdrop.open { display: flex; }
-    .modal { width: min(440px, 100%); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
-    .modal h2 { margin: 0 0 8px; }
-    .modal p { color: var(--soft); line-height: 1.5; }
-    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
-
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes popReveal { 0% { transform: scale(0.5) translateY(10px); opacity: 0; } 50% { transform: scale(1.1) translateY(-2px); } 100% { transform: scale(1) translateY(-1px); opacity: 1; } }
-    @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); border-color: var(--bad); } 40%, 80% { transform: translateX(5px); border-color: var(--bad); } }
-    .shake { animation: shake 0.4s ease-in-out; }
-
-    @media (max-width: 880px) {
-      .game-layout { grid-template-columns: 1fr; }
-      .drawer { grid-row: auto; }
-      .play-area { order: 2; }
-      .drawer { order: 1; }
-      .postgame-panel.visible { order: 3; }
-    }
-
-    @media (max-width: 620px) {
-      .shell { width: min(100% - 16px, 1180px); padding-top: 16px; padding-bottom: 22px; }
-      .topbar { flex-direction: column; align-items: flex-start; margin-bottom: 16px; }
-      .top-actions { width: 100%; justify-content: space-between; margin-top: 10px; }
-      .game-header { flex-direction: column; padding: 16px; }
-      .game-header h2 { font-size: 2rem; }
-      .game-tools { justify-content: space-between; width: 100%; }
-      .timer-box { text-align: left; font-size: 1.8rem; }
-      .letters-board { padding: 14px 12px; gap: 6px; }
-      .letter-tile { width: 44px; font-size: 1.25rem; }
-      .clues { padding: 12px; gap: 8px; }
-      .clue-row { grid-template-columns: 28px minmax(0, 1fr); padding: 10px; }
-      .clue-row input { grid-column: 1 / -1; min-height: 42px; font-size: 1rem; }
-      .final-answer { grid-template-columns: 1fr auto; position: sticky; bottom: 0; z-index: 6; background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(12px); padding: 12px; }
-      .final-answer input { min-height: 48px; font-size: 1rem; }
-      .final-answer .btn { width: auto; min-width: 92px; min-height: 48px; }
-    }
-  </style>
-</head>
-<body>
-  <main class="shell">
-    <header class="topbar">
-      <a href="index.html" class="brand">
-        <img src="ReWorded.png" alt="ReWorded Logo" class="brand-mark" style="background: transparent; object-fit: contain; padding: 2px;">
-        <div>
-          <h1>ReWorded</h1>
-          <p>Return to BitsPlay Hub</p>
-        </div>
-      </a>
-      <div class="top-actions">
-        <button class="btn icon" id="themeBtn" type="button" aria-label="Toggle theme">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M12 3v2.2M12 18.8V21M4.8 4.8l1.55 1.55M17.65 17.65l1.55 1.55M3 12h2.2M18.8 12H21M4.8 19.2l1.55-1.55M17.65 6.35l1.55-1.55" />
-            <circle cx="12" cy="12" r="3.6" />
-          </svg>
-        </button>
-        <button class="btn" id="authBtn" type="button">
-          <span id="authLabel">Sign in</span>
-        </button>
-      </div>
-    </header>
-
-    <div class="game-layout">
-      <section class="play-area">
-        <div class="game-header">
-          <div>
-            <h2 id="leaderboardDate">ReWorded</h2>
-            <p>Each clue asks for a letter from a hidden answer. Solve the clue answer to reveal that letter, then unscramble all five letters into the final word.</p>
-          </div>
-          <div class="game-tools">
-            <button class="btn" id="hintBtn" type="button">Hint</button>
-            <div class="timer-box" id="timer">00:00</div>
-          </div>
-        </div>
-
-        <div class="letters-board" id="lettersBoard" aria-label="Revealed letters"></div>
-        <div class="clues" id="clues"></div>
-        
-        <form class="final-answer" id="finalForm">
-          <input id="finalInput" autocomplete="off" maxlength="5" placeholder="Final word" aria-label="Final word" />
-          <button class="btn good" type="submit">Submit</button>
-          <button class="btn primary" id="persistentShareBtn" type="button" style="display: none;">Share Result</button>
-          <div class="message" id="gameMessage"></div>
-        </form>
-      </section>
-
-      <aside class="drawer">
-        <section class="side-panel">
-          <div class="section-title">
-            <h3>Progress</h3>
-            <span class="small" id="progressText">0/5</span>
-          </div>
-          <div class="progress-meter"><div class="progress-fill" id="progressFill"></div></div>
-          <div class="pill-row">
-            <span class="pill" id="streakPill">Streak 0</span>
-            <span class="pill" id="bestPill">Best --</span>
-          </div>
-        </section>
-
-        <section class="side-panel" id="gameLeaderboardPanel">
-          <div class="section-title">
-            <h3>Leaderboard</h3>
-          </div>
-          <div class="leaderboard-locked" id="leaderboardLocked">Finish the puzzle to unlock today&apos;s board.</div>
-          <div class="leader-list" id="gameLeaderboard"></div>
-        </section>
-
-        <section class="hint-box">
-          The clue answer is not the final word. For example, if the clue asks for the first letter of a city and the city is Mumbai, the revealed letter is M.
-        </section>
-      </aside>
-    </div>
-
-    <section class="side-panel postgame-panel" id="commentPanel">
-      <div class="section-title">
-        <h3>Comment</h3>
-        <span class="small" id="commentMeta">After your run</span>
-      </div>
-      <form class="comment-form" id="commentForm">
-        <textarea class="comment-textarea" id="commentInput" maxlength="280" placeholder="How did today's puzzle feel?"></textarea>
-        <div class="comment-actions">
-          <div class="comment-status" id="commentStatus"></div>
-          <button class="btn primary" id="commentSubmitBtn" type="submit">Post comment</button>
-        </div>
-      </form>
-      <div class="comment-list" id="commentList"></div>
-    </section>
-
-  </main>
-
-  <div class="modal-backdrop" id="finishModal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
-    <div class="modal">
-      <h2 id="finishTitle">Solved</h2>
-      <p id="finishCopy"></p>
-      <div class="modal-actions">
-        <button class="btn" type="button" id="closeModalBtn">Close</button>
-        <button class="btn primary" type="button" id="shareBtn">Share</button>
-      </div>
-    </div>
-  </div>
-
-  <script type="module">
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyBXh3V4n1aOcvjZQjo65gzeStApV1RKWak",
-      authDomain: "bitsplay-c4e24.firebaseapp.com",
-      projectId: "bitsplay-c4e24",
-      storageBucket: "bitsplay-c4e24.firebasestorage.app",
-      messagingSenderId: "136928912243",
-      appId: "1:136928912243:web:8a154edc72b3081184db06"
-    };
-
-    // Very generic fallback to show if Firebase is completely disconnected.
-    const FALLBACK_PUZZLES = [
-      { word: "ERROR", clues: [{ prompt: "Connecting to database...", answer: "Wait", letter: "E" }, { prompt: "If you see this, Firebase failed.", answer: "Fail", letter: "R" }, { prompt: "Check your console for errors.", answer: "Error", letter: "R" }, { prompt: "Ensure your Firestore rules allow reads.", answer: "Rules", letter: "O" }, { prompt: "And check your network.", answer: "Net", letter: "R" }] }
-    ];
-
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = null;
-    function unlockAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); document.body.removeEventListener('touchstart', unlockAudio); document.body.removeEventListener('click', unlockAudio); }
-    document.body.addEventListener('touchstart', unlockAudio);
-    document.body.addEventListener('click', unlockAudio);
-
-    function playTone(freq, type, duration, vol = 0.1, delay = 0) {
-      try {
-        if (!audioCtx) return; 
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
-        gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
-        gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + duration);
-      } catch (e) { }
-    }
-
-    function playSound(type) {
-      if (type === 'reveal') { playTone(523.25, 'sine', 0.1, 0.05); playTone(659.25, 'sine', 0.15, 0.05, 0.08); } 
-      else if (type === 'win') { playTone(440, 'triangle', 0.2, 0.08, 0); playTone(554.37, 'triangle', 0.2, 0.08, 0.1); playTone(659.25, 'triangle', 0.2, 0.08, 0.2); playTone(880, 'triangle', 0.4, 0.08, 0.3); } 
-      else if (type === 'error') { playTone(200, 'square', 0.1, 0.03); playTone(150, 'square', 0.15, 0.03, 0.1); }
-    }    
-
-    const STORAGE_KEY = "daily_games_v1";
-    const THEME_KEY = "daily_games_theme";
-    const todayISO = toLocalISODate(new Date());
-    let firebase = null;
-    let appState = loadState();
-    let user = appState.user || null;
-    let timerHandle = null;
-    let startedAt = null;
-    let hintCooldown = 0;
-    let hintTimerHandle = null;
-    let cloudComments = [];
-    
-    const $ = (id) => document.getElementById(id);
-    const normalize = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`;
-
-    function toLocalISODate(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
-    function currentPlayerId() { return user?.uid || localStorage.getItem("guest_uid") || "guest"; }
-    let puzzleSource = "published";
-    let puzzle = null;
-    let elapsed = 0;
-
-    function loadState() {
-      try {
-        if (!localStorage.getItem("guest_uid")) localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        return { results: parsed.results || {}, leaderboard: parsed.leaderboard || {}, comments: parsed.comments || {}, currents: parsed.currents || {}, profileName: parsed.profileName || "Guest Player" };
-      } catch { return { results: {}, leaderboard: {}, comments: {}, currents: {}, profileName: "Guest Player" }; }
-    }
-function saveState() {
-      appState.currents = appState.currents || {};
-      appState.currents[`${currentPlayerId()}::${puzzle.id}`] = appState.current;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results: appState.results, leaderboard: appState.leaderboard, comments: appState.comments, currents: appState.currents, profileName: appState.profileName }));
-
-      // Real-time Cloud Sync
-      if (firebase && user) {
-         firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), {
-             reworded_current: appState.current,
-             reworded_results: appState.results,
-             updatedAt: firebase.serverTimestamp()
-         }, { merge: true });
-      }
-    }
-
-    function field(data, names, fallback = "") {
-      for (const name of names) { if (data && data[name] !== undefined && data[name] !== null && data[name] !== "") return data[name]; }
-      return fallback;
-    }
-
-    function getExtractedLetter(data, answer) {
-      const stored = field(data, ["extractedLetter", "letter", "targetLetter", "correctLetter", "answerLetter"], "");
-      if (stored) return String(stored).trim().charAt(0).toUpperCase();
-      const extraction = String(field(data, ["extractionType", "letterType", "type"], "first-letter")).toLowerCase();
-      const cleanAnswer = String(answer || "").trim();
-      if (!cleanAnswer) return "";
-      if (extraction.includes("last")) return cleanAnswer.charAt(cleanAnswer.length - 1).toUpperCase();
-      const position = Number(field(data, ["letterIndex", "position"], 1));
-      if (!Number.isNaN(position) && position > 1) return cleanAnswer.charAt(position - 1).toUpperCase();
-      return cleanAnswer.charAt(0).toUpperCase();
-    }
-
-    function normalizeQuestionDoc(snapshot) {
-      const data = snapshot.data ? snapshot.data() : snapshot;
-      const answer = String(field(data, ["answer", "correctAnswer", "solution"], "")).trim();
-      const prompt = String(field(data, ["prompt", "question", "clue", "text"], "")).trim();
-      const letter = getExtractedLetter(data, answer);
-      if (!prompt || !answer || !letter) return null;
-      return { id: snapshot.id || data.id || "", prompt, answer, letter, category: String(field(data, ["category", "topic", "subject"], "General")), difficulty: Number(field(data, ["difficulty", "level"], 1)), source: String(field(data, ["source"], "firestore")) };
-    }
-
-    async function getCloudPuzzle() {
-      if (!firebase) return null;
-      const dailyIds = [`${todayISO}_letter-clues`, todayISO];
-      for (const dailyId of dailyIds) {
-        const dailySnap = await firebase.getDoc(firebase.doc(firebase.db, "dailyPuzzles", dailyId));
-        if (!dailySnap.exists()) continue;
-        const daily = dailySnap.data();
-        const word = String(field(daily, ["word", "answer", "finalWord"], "")).trim().toUpperCase();
-        const clueIds = field(daily, ["clueIds", "questionIds", "questions"], []);
-        if (!word || !Array.isArray(clueIds) || clueIds.length < 5) continue;
-        
-        // Fetch specific questions
-        const clueSnaps = await Promise.all(clueIds.slice(0, 5).map((id) => firebase.getDoc(firebase.doc(firebase.db, "questions", String(id)))));
-        const clues = clueSnaps.map(normalizeQuestionDoc).filter(Boolean);
-        if (clues.length === 5) return { id: todayISO, word, clues, source: "published" };
-      }
-      return null;
-    }
-
-    async function loadCloudPuzzle() {
-      try {
-        const cloudPuzzle = await getCloudPuzzle();
-        if (!cloudPuzzle) return;
-        puzzle = cloudPuzzle;
-        puzzleSource = cloudPuzzle.source;
-        ensureCurrentPuzzle();
-        renderPuzzle();
-      } catch (error) { console.warn("Cloud puzzle error:", error); }
-    }
-
-    function ensureCurrentPuzzle() {
-      appState.currents = appState.currents || {};
-      const sessionKey = `${currentPlayerId()}::${puzzle.id}`;
-      
-      // CRITICAL FIX: If we just loaded the Cloud puzzle, but the save file was created using the Local fallback, Nuke the save file.
-      if (appState.currents[sessionKey] && appState.currents[sessionKey].source === "local" && puzzleSource !== "local") {
-        delete appState.currents[sessionKey];
-      }
-
-      if (!appState.currents[sessionKey]) {
-        appState.currents[sessionKey] = { puzzleId: sessionKey, date: puzzle.id, source: puzzleSource, playerId: currentPlayerId(), clues: puzzle.clues.map(() => ({ solved: false, value: "" })), elapsed: 0, finished: false };
-      }
-      appState.current = appState.currents[sessionKey];
-      elapsed = appState.current.elapsed || 0;
-      saveState();
-    }
-
-    function renderPuzzle() {
-      ensureCurrentPuzzle();
-      const startDate = new Date("2026-05-06T00:00:00");
-      const puzzleDate = new Date(`${todayISO}T00:00:00`);
-      const puzzleNumber = Math.max(1, Math.floor((puzzleDate - startDate) / 86400000) + 1);
-
-      $("leaderboardDate").textContent = `ReWorded #${puzzleNumber}`;
-      $("timer").textContent = formatTime(elapsed);
-      updateHintButton();
-      
-      const finished = !!appState.current?.finished;
-      $("gameLeaderboard").style.display = finished ? "" : "none";
-      $("leaderboardLocked").style.display = finished ? "none" : "";
-
-      $("lettersBoard").innerHTML = puzzle.clues.map((clue, index) => {
-        const solved = appState.current.clues[index]?.solved;
-        return `<div class="letter-tile ${solved ? "revealed" : ""}">${solved ? clue.letter : "?"}</div>`;
-      }).join("");
-
-      $("clues").innerHTML = puzzle.clues.map((clue, index) => {
-        const current = appState.current.clues[index] || { solved: false, value: "" };
-        return `
-          <div class="clue-row ${current.solved ? "solved" : ""}">
-            <div class="clue-number">${index + 1}</div>
-            <div class="clue-text">${clue.prompt}</div>
-            <input class="answer-input" data-clue="${index}" value="${escapeHtml(current.value)}" ${current.solved ? "disabled" : ""} placeholder="Clue answer" autocomplete="off" />
-          </div>
-        `;
-      }).join("");
-
-      const solvedCount = appState.current.clues.filter(item => item.solved).length;
-      $("progressText").textContent = `${solvedCount}/5`;
-      $("progressFill").style.width = `${(solvedCount / puzzle.clues.length) * 100}%`;
-      
-      $("finalInput").disabled = finished;
-      $("finalInput").value = finished ? puzzle.word : "";
-      
-     const submitBtn = $("finalForm").querySelector("button[type='submit']");
-      const persistentShareBtn = $("persistentShareBtn");
-      if (submitBtn) submitBtn.style.display = finished ? "none" : "";
-      if (persistentShareBtn) persistentShareBtn.style.display = finished ? "" : "none";
-
-      // START FIX: Bind timer to input focus
-      $("finalInput").addEventListener("focus", startTimer);
-      document.querySelectorAll(".answer-input").forEach(input => {
-        input.addEventListener("focus", startTimer);
-        input.addEventListener("input", handleClueInput);
-      });
-      // END FIX
-
-      renderLeaderboards();
-      renderComments();
-    } 
-
-    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c])); }
-
-    function updateHintButton() {
-      const hintBtn = $("hintBtn");
-      if (!hintBtn) return;
-      hintBtn.disabled = appState.current.finished || hintCooldown > 0;
-      hintBtn.textContent = hintCooldown > 0 ? `Hint ${hintCooldown}s` : "Hint";
-    }
-
-    function startHintCooldown() {
-      hintCooldown = 20; updateHintButton();
-      if (hintTimerHandle) clearInterval(hintTimerHandle);
-      hintTimerHandle = setInterval(() => {
-        hintCooldown = Math.max(0, hintCooldown - 1);
-        updateHintButton();
-        if (hintCooldown === 0) { clearInterval(hintTimerHandle); hintTimerHandle = null; }
-      }, 1000);
-    }
-
-    function showHint() {
-      if (hintCooldown > 0 || appState.current.finished) return;
-      startTimer();
-      const unsolved = appState.current.clues.map((item, index) => ({ ...item, index })).filter(item => !item.solved);
-      if (!unsolved.length) { $("gameMessage").textContent = "All clue letters are already revealed."; $("gameMessage").className = "message good"; return; }
-      const pick = unsolved[Math.floor(Math.random() * unsolved.length)];
-      const clue = puzzle.clues[pick.index];
-      const preview = clue.answer.length <= 2 ? clue.answer : `${clue.answer[0]}${"-".repeat(Math.max(1, clue.answer.length - 2))}${clue.answer[clue.answer.length - 1]}`;
-      $("gameMessage").textContent = `Hint for clue ${pick.index + 1}: the answer looks like ${preview}.`;
-      $("gameMessage").className = "message";
-      startHintCooldown();
-    }
-
-    function handleClueInput(event) {
-      const inputElement = event.target;
-      const index = Number(inputElement.dataset.clue);
-      const value = inputElement.value;
-      appState.current.clues[index].value = value;
-
-      if (normalize(value) === normalize(puzzle.clues[index].answer)) {
-        appState.current.clues[index].solved = true;
-        inputElement.disabled = true;
-        inputElement.closest('.clue-row').classList.add('solved');
-        playSound('reveal');
-        
-        $("lettersBoard").innerHTML = puzzle.clues.map((clue, idx) => {
-          const solved = appState.current.clues[idx]?.solved;
-          return `<div class="letter-tile ${solved ? "revealed" : ""}">${solved ? clue.letter : "?"}</div>`;
-        }).join("");
-
-        const solvedCount = appState.current.clues.filter(item => item.solved).length;
-        $("progressText").textContent = `${solvedCount}/5`;
-        $("progressFill").style.width = `${(solvedCount / puzzle.clues.length) * 100}%`;
-        saveState();
-      }
-    }
-
-    function startTimer() {
-      if (appState.current.finished || timerHandle) return;
-      startedAt = Date.now() - elapsed * 1000;
-      timerHandle = setInterval(() => {
-        elapsed = Math.floor((Date.now() - startedAt) / 1000);
-        appState.current.elapsed = elapsed;
-        $("timer").textContent = formatTime(elapsed);
-        if (elapsed % 5 === 0) saveState();
-      }, 250);
-    }
-
-    function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; appState.current.elapsed = elapsed; saveState(); }
-
-    function finishGame() {
-      stopTimer();
-      appState.current.clues = puzzle.clues.map((clue) => ({ solved: true, value: clue.answer }));
-      appState.current.finished = true;
-      const playerId = currentPlayerId();
-      const result = { time: elapsed, at: Date.now(), name: user?.displayName || appState.profileName || "Guest Player", photoURL: user?.photoURL || "", uid: playerId };
-      appState.results[`${playerId}::${puzzle.id}`] = result;
-
-      const boardKey = `letter-clues-${puzzle.id}`;
-      const existing = appState.leaderboard[boardKey] || [];
-      appState.leaderboard[boardKey] = [...existing.filter(e => e.uid !== playerId), result].sort((a, b) => a.time - b.time).slice(0, 10);
-      saveState();
-      syncResult(result);
-      renderPuzzle();
-      $("finishCopy").textContent = `You solved ${puzzle.word} in ${formatTime(elapsed)}.`;
-      $("finishModal").classList.add("open");
-    }
-
-    function renderLeaderboards() {
-      const rows = appState.leaderboard[`letter-clues-${puzzle.id}`] || [];
-      $("gameLeaderboard").innerHTML = rows.length ? rows.map((entry, index) => {
-        const image = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : ``;
-        return `<div class="leader-row"><div class="leader-person"><span style="font-weight: 750; color: var(--muted); margin-right: 6px; width: 18px;">${index + 1}.</span>${image}<div class="leader-name">${escapeHtml(entry.name || "Player")}</div></div><div class="time">${formatTime(entry.time)}</div></div>`;
-      }).join("") : `<div class="small">No finishes yet. Be the first on today&apos;s board.</div>`;
-
-      const allResults = Object.entries(appState.results || {}).filter(([k, r]) => k.startsWith(`${currentPlayerId()}::`) || r?.uid === currentPlayerId()).map(([, r]) => r);
-      const best = allResults.length ? Math.min(...allResults.map(r => r.time)) : null;
-      $("bestPill").textContent = `Best ${best == null ? "--" : formatTime(best)}`;
-      
-      let streak = 0; const cursor = new Date(`${todayISO}T00:00:00`);
-      if (!Object.entries(appState.results || {}).some(([k, r]) => k === todayISO && r?.uid === currentPlayerId())) cursor.setDate(cursor.getDate() - 1);
-      while (true) {
-        if (!Object.entries(appState.results || {}).some(([k, r]) => k === toLocalISODate(cursor) && r?.uid === currentPlayerId())) break;
-        streak += 1; cursor.setDate(cursor.getDate() - 1);
-      }
-      $("streakPill").textContent = `Streak ${streak}`;
-    }
-
-function renderComments() {
-  const panel = $("commentPanel");
-  const finished = !!appState.current?.finished;
-  panel.classList.toggle("visible", finished);
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  
+  <meta name="robots" content="index, follow" />  
+  <meta name="theme-color" content="#f7f8fb" />  
+  <meta name="application-name" content="BitsPlay" />  
+  <meta name="apple-mobile-web-app-capable" content="yes" />  
+  <meta name="apple-mobile-web-app-title" content="BitsPlay" />    <title>ReWorded | BitsPlay</title>  
+  <meta name="description" content="Play ReWorded: solve five clues, reveal five letters, and find the hidden word.">    <link rel="canonical" href="https://jenishestmoizavut.github.io/BitsPlay/reworded.html" />  
+  <link rel="icon" type="image/png" href="BitsPlay.png" />  
+  <link rel="manifest" href="manifest.json" />  
+  <link rel="apple-touch-icon" href="BitsPlay.png" />    <style>  
+    :root {  
+      --bg: #f7f8fb; --panel: #ffffff; --panel-soft: #f1f5f9; --line: #dfe5ee;  
+      --text: #111827; --soft: #526174; --muted: #7b8797;  
+      --accent: #2563eb; --accent-soft: #e9f1ff;  
+      --good: #16803c; --good-soft: #e8f7ee;  
+      --warn: #a15c07; --warn-soft: #fff3dc;  
+      --bad: #b42318; --shadow: 0 20px 50px rgba(15, 23, 42, 0.09);  
+      --radius: 8px;  
+    }  
   
-  $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";
-  $("commentInput").disabled = !finished; 
-  $("commentSubmitBtn").disabled = !finished;
-
-  const merged = new Map();
-  [...cloudComments].forEach(entry => { 
-    if (entry && entry.uid) merged.set(entry.uid, entry); 
-  });
+    body.dark {  
+      --bg: #0b1020; --panel: #11182a; --panel-soft: #172033; --line: #273349;  
+      --text: #edf2f8; --soft: #bec9d8; --muted: #91a0b4;  
+      --accent: #60a5fa; --accent-soft: #132944;  
+      --good: #5ee08a; --good-soft: #123420;  
+      --warn: #f7bd59; --warn-soft: #38280e;  
+      --bad: #ff8f87; --shadow: 0 20px 60px rgba(0, 0, 0, 0.3);  
+    }  
   
-  const comments = Array.from(merged.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    * { box-sizing: border-box; }  
+    html, body { min-height: 100%; margin: 0; }  
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; letter-spacing: 0; }  
+  
+    button, input { font: inherit; }  
+    button { border: 0; cursor: pointer; color: inherit; }  
+    button:disabled { cursor: default; opacity: 0.55; }  
+    a { text-decoration: none; color: inherit; }  
+  
+    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 36px; }  
+  
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }  
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }  
+    .brand-mark { width: 34px; height: 34px; border-radius: var(--radius); display: grid; place-items: center; background: var(--accent); color: white; font-weight: 800; flex: 0 0 auto; }  
+    .brand h1 { font-size: 1.05rem; line-height: 1.1; margin: 0; }  
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; }  
+    .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }  
+  
+    .btn { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 999px; padding: 8px 13px; background: var(--panel-soft); color: var(--soft); border: 1px solid var(--line); font-weight: 650; font-size: 0.86rem; transition: transform 0.12s ease, border-color 0.12s ease; }  
+    .btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent); }  
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }  
+    .btn.good { background: var(--good); border-color: var(--good); color: white; }  
+    .btn.icon { width: 38px; padding: 0; }  
+  
+    .avatar { width: 28px; height: 28px; border-radius: 999px; object-fit: cover; border: 1px solid var(--line); }  
+  
+    .game-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }  
+    .play-area { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }  
+      
+    .game-header { padding: 18px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }  
+    .game-header h2 { margin: 0 0 5px; font-size: clamp(1.5rem, 3vw, 2.25rem); letter-spacing: 0; }  
+    .game-header p { margin: 0; color: var(--soft); max-width: 680px; line-height: 1.45; }  
+    .game-tools { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }  
+    .timer-box { min-width: 94px; text-align: right; font-size: 1.45rem; font-variant-numeric: tabular-nums; font-weight: 850; color: var(--accent); }  
+  
+    .letters-board { padding: 18px; display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; background: var(--panel-soft); border-bottom: 1px solid var(--line); }  
+    .letter-tile { width: 54px; aspect-ratio: 1; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); display: grid; place-items: center; color: var(--muted); font-size: 1.65rem; font-weight: 850; transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease; flex: 0 0 auto; }  
+    .letter-tile.revealed { background: var(--good-soft); color: var(--good); transform: translateY(-1px); animation: popReveal 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }  
+  
+    .clues { padding: 18px; display: grid; gap: 10px; }  
+    .clue-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 180px; gap: 10px; align-items: center; padding: 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); transition: background 0.3s ease, border-color 0.3s ease; }  
+    .clue-number { width: 30px; height: 30px; border-radius: 999px; background: var(--panel-soft); display: grid; place-items: center; color: var(--soft); font-weight: 800; font-size: 0.82rem; }  
+    .clue-row.solved { border-color: color-mix(in srgb, var(--good) 34%, var(--line)); background: var(--good-soft); }  
+    .clue-text { color: var(--text); line-height: 1.42; font-size: 0.94rem; }  
+  
+    .answer-input { width: 100%; border: 1px solid var(--line); border-radius: var(--radius); min-height: 38px; padding: 8px 10px; background: var(--panel); color: var(--text); outline: 0; }  
+    .answer-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }  
+  
+    .final-answer { border-top: 1px solid var(--line); padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--panel); }  
+    .final-answer input { width: 100%; min-height: 44px; padding: 9px 12px; border-radius: var(--radius); border: 1px solid var(--line); outline: 0; background: var(--panel-soft); color: var(--text); font-size: 1rem; text-transform: uppercase; font-weight: 750; letter-spacing: 0; }  
+  
+    .message { grid-column: 1 / -1; min-height: 20px; color: var(--muted); font-size: 0.86rem; }  
+    .message.good { color: var(--good); font-weight: 750; }  
+    .message.bad { color: var(--bad); font-weight: 750; }  
+  
+    .drawer { display: flex; flex-direction: column; gap: 14px; }  
+    .side-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }  
+    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }  
+    .section-title h3 { margin: 0; font-size: 1rem; }  
+    .small { color: var(--muted); font-size: 0.8rem; }  
+  
+    .progress-meter { height: 8px; background: var(--panel-soft); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }  
+    .progress-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s ease; }  
+  
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }  
+    .pill { border: 1px solid var(--line); background: var(--panel-soft); color: var(--soft); border-radius: 999px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; }  
+  
+    .leaderboard-locked { color: var(--muted); font-size: 0.85rem; line-height: 1.45; }  
+    .leader-list { display: flex; flex-direction: column; gap: 8px; }  
+    .leader-row { min-height: 44px; border-radius: var(--radius); background: var(--panel-soft); border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; }  
+    .leader-person { display: flex; align-items: center; gap: 8px; min-width: 0; }  
+    .leader-name { font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }  
+  
+    .hint-box { background: var(--warn-soft); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 20%, transparent); border-radius: var(--radius); padding: 10px; font-size: 0.84rem; line-height: 1.45; }  
+  
+    .postgame-panel { display: none; margin-top: 14px; }  
+    .postgame-panel.visible { display: block; animation: fadeUp 0.22s ease-out both; }  
+  
+    .comment-form { display: grid; gap: 10px; }  
+    .comment-textarea { width: 100%; min-height: 104px; resize: vertical; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel-soft); color: var(--text); padding: 12px; outline: 0; line-height: 1.45; }  
+    .comment-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }  
+    .comment-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }  
+    .comment-status { min-height: 18px; color: var(--muted); font-size: 0.8rem; }  
+    .comment-status.good { color: var(--good); font-weight: 700; }  
+    .comment-status.bad { color: var(--bad); font-weight: 700; }  
+    .comment-list { display: grid; gap: 8px; margin-top: 12px; }  
+    .comment-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-soft); padding: 10px 12px; }  
+    .comment-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: var(--muted); font-size: 0.76rem; }  
+    .comment-body { white-space: pre-wrap; line-height: 1.45; color: var(--text); font-size: 0.9rem; }  
+  
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.48); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 50; }  
+    .modal-backdrop.open { display: flex; }  
+    .modal { width: min(440px, 100%); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }  
+    .modal h2 { margin: 0 0 8px; }  
+    .modal p { color: var(--soft); line-height: 1.5; }  
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }  
+  
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }  
+    @keyframes popReveal { 0% { transform: scale(0.5) translateY(10px); opacity: 0; } 50% { transform: scale(1.1) translateY(-2px); } 100% { transform: scale(1) translateY(-1px); opacity: 1; } }  
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); border-color: var(--bad); } 40%, 80% { transform: translateX(5px); border-color: var(--bad); } }  
+    .shake { animation: shake 0.4s ease-in-out; }  
+  
+    @media (max-width: 880px) {  
+      .game-layout { grid-template-columns: 1fr; }  
+      .drawer { grid-row: auto; }  
+      .play-area { order: 2; }  
+      .drawer { order: 1; }  
+      .postgame-panel.visible { order: 3; }  
+    }  
+  
+    @media (max-width: 620px) {  
+      .shell { width: min(100% - 16px, 1180px); padding-top: 16px; padding-bottom: 22px; }  
+      .topbar { flex-direction: column; align-items: flex-start; margin-bottom: 16px; }  
+      .top-actions { width: 100%; justify-content: space-between; margin-top: 10px; }  
+      .game-header { flex-direction: column; padding: 16px; }  
+      .game-header h2 { font-size: 2rem; }  
+      .game-tools { justify-content: space-between; width: 100%; }  
+      .timer-box { text-align: left; font-size: 1.8rem; }  
+      .letters-board { padding: 14px 12px; gap: 6px; }  
+      .letter-tile { width: 44px; font-size: 1.25rem; }  
+      .clues { padding: 12px; gap: 8px; }  
+      .clue-row { grid-template-columns: 28px minmax(0, 1fr); padding: 10px; }  
+      .clue-row input { grid-column: 1 / -1; min-height: 42px; font-size: 1rem; }  
+      .final-answer { grid-template-columns: 1fr auto; position: sticky; bottom: 0; z-index: 6; background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(12px); padding: 12px; }  
+      .final-answer input { min-height: 48px; font-size: 1rem; }  
+      .final-answer .btn { width: auto; min-width: 92px; min-height: 48px; }  
+    }  
+  </style>  </head>  
+<body>  
+  <main class="shell">  
+    <header class="topbar">  
+      <a href="index.html" class="brand">  
+        <img src="ReWorded.png" alt="ReWorded Logo" class="brand-mark" style="background: transparent; object-fit: contain; padding: 2px;">  
+        <div>  
+          <h1>ReWorded</h1>  
+          <p>Return to BitsPlay Hub</p>  
+        </div>  
+      </a>  
+      <div class="top-actions">  
+        <button class="btn icon" id="themeBtn" type="button" aria-label="Toggle theme">  
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">  
+            <path d="M12 3v2.2M12 18.8V21M4.8 4.8l1.55 1.55M17.65 17.65l1.55 1.55M3 12h2.2M18.8 12H21M4.8 19.2l1.55-1.55M17.65 6.35l1.55-1.55" />  
+            <circle cx="12" cy="12" r="3.6" />  
+          </svg>  
+        </button>  
+        <button class="btn" id="authBtn" type="button">  
+          <span id="authLabel">Sign in</span>  
+        </button>  
+      </div>  
+    </header>  <div class="game-layout">  
+  <section class="play-area">  
+    <div class="game-header">  
+      <div>  
+        <h2 id="leaderboardDate">ReWorded</h2>  
+        <p>Each clue asks for a letter from a hidden answer. Solve the clue answer to reveal that letter, then unscramble all five letters into the final word.</p>  
+      </div>  
+      <div class="game-tools">  
+        <button class="btn" id="hintBtn" type="button">Hint</button>  
+        <div class="timer-box" id="timer">00:00</div>  
+      </div>  
+    </div>  
 
-  $("commentList").innerHTML = comments.length ? comments.map(entry => {
-    // Generate the avatar HTML (uses a placeholder div if no photo exists)
-    const avatarImg = entry.photoURL 
-      ? `<img src="${entry.photoURL}" class="avatar" style="width:20px; height:20px; margin-right:6px;">` 
-      : `<div class="avatar" style="width:20px; height:20px; margin-right:6px; background:var(--line); display:inline-block;"></div>`;
+    <div class="letters-board" id="lettersBoard" aria-label="Revealed letters"></div>  
+    <div class="clues" id="clues"></div>  
+      
+    <form class="final-answer" id="finalForm">  
+      <input id="finalInput" autocomplete="off" maxlength="5" placeholder="Final word" aria-label="Final word" />  
+      <button class="btn good" type="submit">Submit</button>  
+      <button class="btn primary" id="persistentShareBtn" type="button" style="display: none;">Share Result</button>  
+      <div class="message" id="gameMessage"></div>  
+    </form>  
+  </section>  
 
-    return `
-      <article class="comment-card">
-        <div class="comment-meta">
-          <span style="display:flex; align-items:center;">
-            ${avatarImg} 
-            <strong>${escapeHtml(entry.name)}</strong>
-          </span>
-          <span>${escapeHtml(entry.dateLabel || "")}</span>
-        </div>
-        <div class="comment-body">${escapeHtml(entry.text || "")}</div>
-      </article>
-    `;
-  }).join("") : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";
-}
+  <aside class="drawer">  
+    <section class="side-panel">  
+      <div class="section-title">  
+        <h3>Progress</h3>  
+        <span class="small" id="progressText">0/5</span>  
+      </div>  
+      <div class="progress-meter"><div class="progress-fill" id="progressFill"></div></div>  
+      <div class="pill-row">  
+        <span class="pill" id="streakPill">Streak 0</span>  
+        <span class="pill" id="bestPill">Best --</span>  
+      </div>  
+    </section>  
 
-    async function submitComment(event) {
-  event.preventDefault(); 
-  const text = $("commentInput").value.trim();
-  if (!text) return;
-  if (!firebase) return;
+    <section class="side-panel" id="gameLeaderboardPanel">  
+      <div class="section-title">  
+        <h3>Leaderboard</h3>  
+      </div>  
+      <div class="leaderboard-locked" id="leaderboardLocked">Finish the puzzle to unlock today&apos;s board.</div>  
+      <div class="leader-list" id="gameLeaderboard"></div>  
+    </section>  
 
-  $("commentSubmitBtn").disabled = true; 
-  $("commentStatus").textContent = "Posting…";
+    <section class="hint-box">  
+      The clue answer is not the final word. For example, if the clue asks for the first letter of a city and the city is Mumbai, the revealed letter is M.  
+    </section>  
+  </aside>  
+</div>  
 
-  try {
-    // Uses a unique ID based on game, date, and user to prevent intermixing
-    const commentId = `reworded_${todayISO}_${currentPlayerId()}`;
-    
-    await firebase.setDoc(firebase.doc(firebase.db, "comments", commentId), {
-      puzzleId: todayISO,
-      uid: currentPlayerId(),
-      name: user?.displayName || appState.profileName || "Guest Player",
-      photoURL: user?.photoURL || "", // <--- Sends your avatar URL to the cloud
-      text,
-      game: "reworded",
-      createdAtMs: Date.now(),
-      updatedAt: firebase.serverTimestamp()
-    }, { merge: true });
+<section class="side-panel postgame-panel" id="commentPanel">  
+  <div class="section-title">  
+    <h3>Comment</h3>  
+    <span class="small" id="commentMeta">After your run</span>  
+  </div>  
+  <form class="comment-form" id="commentForm">  
+    <textarea class="comment-textarea" id="commentInput" maxlength="280" placeholder="How did today's puzzle feel?"></textarea>  
+    <div class="comment-actions">  
+      <div class="comment-status" id="commentStatus"></div>  
+      <button class="btn primary" id="commentSubmitBtn" type="submit">Post comment</button>  
+    </div>  
+  </form>  
+  <div class="comment-list" id="commentList"></div>  
+</section>
 
-    $("commentInput").value = ""; 
-    $("commentStatus").textContent = "Comment posted!";
-    $("commentStatus").className = "comment-status good";
-  } catch (error) { 
-    $("commentStatus").textContent = "Post failed. Try again."; 
-    $("commentStatus").className = "comment-status bad"; 
-  } finally { 
-    $("commentSubmitBtn").disabled = false; 
-  }
-}
-
-    function renderProfile() {
-      const authLabel = document.getElementById("authLabel");
-      if (authLabel) authLabel.textContent = user ? (user.displayName?.split(" ")[0] || "Account") : "Sign in";
-    }
-
-    async function initFirebase() {
-      try {
-        const [{ initializeApp }, { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut }, { getFirestore, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where }] = await Promise.all([
-          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"), import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"), import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
-        ]);
-        firebase = { auth: getAuth(initializeApp(FIREBASE_CONFIG)), db: getFirestore(), provider: new GoogleAuthProvider(), signInWithPopup, signOut, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where };
-        
-       onAuthStateChanged(firebase.auth, async (account) => {
-          user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
+  </main>    <div class="modal-backdrop" id="finishModal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">  
+    <div class="modal">  
+      <h2 id="finishTitle">Solved</h2>  
+      <p id="finishCopy"></p>  
+      <div class="modal-actions">  
+        <button class="btn" type="button" id="closeModalBtn">Close</button>  
+        <button class="btn primary" type="button" id="shareBtn">Share</button>  
+      </div>  
+    </div>  
+  </div>    <script type="module">  
+    const FIREBASE_CONFIG = {  
+      apiKey: "AIzaSyBXh3V4n1aOcvjZQjo65gzeStApV1RKWak",  
+      authDomain: "bitsplay-c4e24.firebaseapp.com",  
+      projectId: "bitsplay-c4e24",  
+      storageBucket: "bitsplay-c4e24.firebasestorage.app",  
+      messagingSenderId: "136928912243",  
+      appId: "1:136928912243:web:8a154edc72b3081184db06"  
+    };  
+  
+    // Very generic fallback to show if Firebase is completely disconnected.  
+    const FALLBACK_PUZZLES = [  
+      { word: "ERROR", clues: [{ prompt: "Connecting to database...", answer: "Wait", letter: "E" }, { prompt: "If you see this, Firebase failed.", answer: "Fail", letter: "R" }, { prompt: "Check your console for errors.", answer: "Error", letter: "R" }, { prompt: "Ensure your Firestore rules allow reads.", answer: "Rules", letter: "O" }, { prompt: "And check your network.", answer: "Net", letter: "R" }] }  
+    ];  
+  
+    const AudioContext = window.AudioContext || window.webkitAudioContext;  
+    let audioCtx = null;  
+    function unlockAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); document.body.removeEventListener('touchstart', unlockAudio); document.body.removeEventListener('click', unlockAudio); }  
+    document.body.addEventListener('touchstart', unlockAudio);  
+    document.body.addEventListener('click', unlockAudio);  
+  
+    function playTone(freq, type, duration, vol = 0.1, delay = 0) {  
+      try {  
+        if (!audioCtx) return;   
+        if (audioCtx.state === 'suspended') audioCtx.resume();  
+        const osc = audioCtx.createOscillator();  
+        const gain = audioCtx.createGain();  
+        osc.type = type;  
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);  
+        gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);  
+        gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.02);  
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);  
+        osc.connect(gain); gain.connect(audioCtx.destination);  
+        osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + duration);  
+      } catch (e) { }  
+    }  
+  
+    function playSound(type) {  
+      if (type === 'reveal') { playTone(523.25, 'sine', 0.1, 0.05); playTone(659.25, 'sine', 0.15, 0.05, 0.08); }   
+      else if (type === 'win') { playTone(440, 'triangle', 0.2, 0.08, 0); playTone(554.37, 'triangle', 0.2, 0.08, 0.1); playTone(659.25, 'triangle', 0.2, 0.08, 0.2); playTone(880, 'triangle', 0.4, 0.08, 0.3); }   
+      else if (type === 'error') { playTone(200, 'square', 0.1, 0.03); playTone(150, 'square', 0.15, 0.03, 0.1); }  
+    }      
+  
+    const STORAGE_KEY = "daily_games_v1";  
+    const THEME_KEY = "daily_games_theme";  
+    const todayISO = toLocalISODate(new Date());  
+    let firebase = null;  
+    let appState = loadState();  
+    let user = appState.user || null;  
+    let timerHandle = null;  
+    let startedAt = null;  
+    let hintCooldown = 0;  
+    let hintTimerHandle = null;  
+    let cloudComments = [];  
+      
+    const $ = (id) => document.getElementById(id);  
+    const normalize = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, "");  
+    const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`;  
+  
+    function toLocalISODate(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }  
+    function currentPlayerId() { return user?.uid || localStorage.getItem("guest_uid") || "guest"; }  
+    let puzzleSource = "published";  
+    let puzzle = null;  
+    let elapsed = 0;  
+  
+    function loadState() {  
+      try {  
+        if (!localStorage.getItem("guest_uid")) localStorage.setItem("guest_uid", "guest_" + Math.random().toString(36).slice(2, 11));  
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");  
+        return { results: parsed.results || {}, leaderboard: parsed.leaderboard || {}, comments: parsed.comments || {}, currents: parsed.currents || {}, profileName: parsed.profileName || "Guest Player" };  
+      } catch { return { results: {}, leaderboard: {}, comments: {}, currents: {}, profileName: "Guest Player" }; }  
+    }  
+    function saveState() {  
+      appState.currents = appState.currents || {};  
+      appState.currents[`${currentPlayerId()}::${puzzle.id}`] = appState.current;  
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results: appState.results, leaderboard: appState.leaderboard, comments: appState.comments, currents: appState.currents, profileName: appState.profileName }));  
+  
+      // Real-time Cloud Sync  
+      if (firebase && user) {  
+         firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), {  
+             reworded_current: appState.current,  
+             reworded_results: appState.results,  
+             updatedAt: firebase.serverTimestamp()  
+         }, { merge: true });  
+      }  
+    }  
+  
+    function field(data, names, fallback = "") {  
+      for (const name of names) { if (data && data[name] !== undefined && data[name] !== null && data[name] !== "") return data[name]; }  
+      return fallback;  
+    }  
+  
+    function getExtractedLetter(data, answer) {  
+      const stored = field(data, ["extractedLetter", "letter", "targetLetter", "correctLetter", "answerLetter"], "");  
+      if (stored) return String(stored).trim().charAt(0).toUpperCase();  
+      const extraction = String(field(data, ["extractionType", "letterType", "type"], "first-letter")).toLowerCase();  
+      const cleanAnswer = String(answer || "").trim();  
+      if (!cleanAnswer) return "";  
+      if (extraction.includes("last")) return cleanAnswer.charAt(cleanAnswer.length - 1).toUpperCase();  
+      const position = Number(field(data, ["letterIndex", "position"], 1));  
+      if (!Number.isNaN(position) && position > 1) return cleanAnswer.charAt(position - 1).toUpperCase();  
+      return cleanAnswer.charAt(0).toUpperCase();  
+    }  
+  
+    function normalizeQuestionDoc(snapshot) {  
+      const data = snapshot.data ? snapshot.data() : snapshot;  
+      const answer = String(field(data, ["answer", "correctAnswer", "solution"], "")).trim();  
+      const prompt = String(field(data, ["prompt", "question", "clue", "text"], "")).trim();  
+      const letter = getExtractedLetter(data, answer);  
+      if (!prompt || !answer || !letter) return null;  
+      return { id: snapshot.id || data.id || "", prompt, answer, letter, category: String(field(data, ["category", "topic", "subject"], "General")), difficulty: Number(field(data, ["difficulty", "level"], 1)), source: String(field(data, ["source"], "firestore")) };  
+    }  
+  
+    async function getCloudPuzzle() {  
+      if (!firebase) return null;  
+      const dailyIds = [`${todayISO}_letter-clues`, todayISO];  
+      for (const dailyId of dailyIds) {  
+        const dailySnap = await firebase.getDoc(firebase.doc(firebase.db, "dailyPuzzles", dailyId));  
+        if (!dailySnap.exists()) continue;  
+        const daily = dailySnap.data();  
+        const word = String(field(daily, ["word", "answer", "finalWord"], "")).trim().toUpperCase();  
+        const clueIds = field(daily, ["clueIds", "questionIds", "questions"], []);  
+        if (!word || !Array.isArray(clueIds) || clueIds.length < 5) continue;  
           
-          if (account && firebase.onSnapshot) {
-             // 1. SYNC USER STATE (Streaks and Results)
-             firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
-                if (docSnap.exists()) {
-                   const data = docSnap.data();
-                   let updated = false;
-                   if (data.reworded_results) {
-                       const merged = { ...appState.results, ...data.reworded_results };
-                       if (JSON.stringify(merged) !== JSON.stringify(appState.results)) {
-                           appState.results = merged;
-                           updated = true;
-                       }
-                   }
-                   if (data.reworded_current && data.reworded_current.date === puzzle.id) {
-                       const remote = data.reworded_current;
-                       const remoteSolved = remote.clues?.filter(c=>c.solved).length || 0;
-                       const localSolved = appState.current.clues?.filter(c=>c.solved).length || 0;
-                       if ((remote.finished && !appState.current.finished) || (!appState.current.finished && remoteSolved > localSolved)) {
-                           appState.current = remote;
-                           if (remote.elapsed) elapsed = remote.elapsed;
-                           updated = true;
-                       }
-                   }
-                   if (updated) {
-                       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-                       renderPuzzle();
-                   }
-                }
-             });
-
-             // 2. LEADERBOARD LISTENER (Only for ReWorded)
-             firebase.onSnapshot(
-               firebase.query(
-                 firebase.collection(firebase.db, "leaderboards", `letter-clues-${todayISO}`, "entries"), 
-                 firebase.orderBy("time", "asc"), 
-                 firebase.limit(10)
-               ), 
-               (snap) => {
-                 appState.leaderboard[`letter-clues-${todayISO}`] = snap.docs.map(d => d.data()); 
-                 saveState(); 
-                 renderLeaderboards();
-               }
-             );
-
-             // 3. COMMENTS LISTENER (Only for ReWorded)
-             firebase.onSnapshot(
-               firebase.query(
-                 firebase.collection(firebase.db, "comments"), 
-                 firebase.where("puzzleId", "==", todayISO),
-                 firebase.where("game", "==", "reworded"),
-                 firebase.limit(50)
-               ), 
-               (snap) => {
-                 cloudComments = snap.docs.map(d => { 
-                   const entry = d.data(); 
-                   return { 
-                     uid: entry.uid, 
-                     name: entry.name || "Player",
-                     photoURL: entry.photoURL || "",
-                     text: entry.text || "", 
-                     createdAt: entry.createdAtMs || 0, 
-                     dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "" 
-                   }; 
-                 }).sort((a, b) => b.createdAt - a.createdAt); // Sort newest-first in JS, no composite index needed
-                 renderComments();
-               }
-             );
-          }
-          renderProfile();
-        });
-
-        await loadCloudPuzzle();
-      } catch (error) {}
-    }
-    async function authAction() {
-      if (!firebase) { $("finishTitle").textContent = "Firebase not configured"; $("finishModal").classList.add("open"); return; }
-      try { if (firebase.auth.currentUser) await firebase.signOut(firebase.auth); else await firebase.signInWithPopup(firebase.auth, firebase.provider); } catch (error) {}
-    }
-
-    async function syncResult(result) {
-      if (!firebase) return; 
-      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", `letter-clues-${puzzle.id}`, "entries", currentPlayerId()), { ...result, uid: currentPlayerId(), puzzleId: puzzle.id, game: "letter-clues", updatedAt: firebase.serverTimestamp() }, { merge: true });
-    }
-
-    function shareResult() {
-const result = appState.results[`${currentPlayerId()}::${puzzle.id}`];
-      const puzzleNumber = Math.max(1, Math.floor((new Date(`${puzzle.id}T00:00:00`) - new Date("2026-05-06T00:00:00")) / 86400000) + 1);
-      const text = result ? `BitsPlay - ReWorded #${puzzleNumber}\nIt took me ${formatTime(result.time)} to solve today's ReWorded puzzle, let me know how long you took! \njenishestmoizavut.github.io/BitsPlay/reworded.html` : "BitsPlay - ReWorded\njenishestmoizavut.github.io/BitsPlay/reworded.html";
-      if (navigator.share) navigator.share({ text }).catch(() => {}); else { navigator.clipboard?.writeText(text); $("finishCopy").textContent = "Result copied to clipboard."; }
-    }
-
-    $("authBtn").addEventListener("click", authAction);
-    $("themeBtn").addEventListener("click", () => { document.body.classList.toggle("dark"); localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light"); });
-    $("closeModalBtn").addEventListener("click", () => $("finishModal").classList.remove("open"));
-    $("shareBtn").addEventListener("click", shareResult);
-    $("hintBtn").addEventListener("click", showHint);
-    $("commentForm").addEventListener("submit", submitComment);
-    $("finalForm").addEventListener("submit", (event) => {
-      event.preventDefault(); startTimer();
-      if (normalize($("finalInput").value) === normalize(puzzle.word)) {
-        $("gameMessage").textContent = "Correct."; $("gameMessage").className = "message good"; playSound('win'); finishGame();
-      } else {
-        $("gameMessage").textContent = "Not quite. Try rearranging the revealed letters."; $("gameMessage").className = "message bad"; playSound('error'); 
-        const inputElement = $("finalInput"); inputElement.classList.remove("shake"); void inputElement.offsetWidth; inputElement.classList.add("shake");
-      }
-    });
-
-    if ($("persistentShareBtn")) $("persistentShareBtn").addEventListener("click", shareResult);
-    window.addEventListener("beforeunload", stopTimer);
-    if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
-    initFirebase(); // ensureCurrentPuzzle and renderPuzzle are safely called inside loadCloudPuzzle()
-  </script>
-</body>
+        // Fetch specific questions  
+        const clueSnaps = await Promise.all(clueIds.slice(0, 5).map((id) => firebase.getDoc(firebase.doc(firebase.db, "questions", String(id)))));  
+        const clues = clueSnaps.map(normalizeQuestionDoc).filter(Boolean);  
+        if (clues.length === 5) return { id: todayISO, word, clues, source: "published" };  
+      }  
+      return null;  
+    }  
+  
+    async function loadCloudPuzzle() {  
+      try {  
+        const cloudPuzzle = await getCloudPuzzle();  
+        if (!cloudPuzzle) return;  
+        puzzle = cloudPuzzle;  
+        puzzleSource = cloudPuzzle.source;  
+        ensureCurrentPuzzle();  
+        renderPuzzle();  
+      } catch (error) { console.warn("Cloud puzzle error:", error); }  
+    }  
+  
+    function ensureCurrentPuzzle() {  
+      appState.currents = appState.currents || {};  
+      const sessionKey = `${currentPlayerId()}::${puzzle.id}`;  
+        
+      if (appState.currents[sessionKey] && appState.currents[sessionKey].source === "local" && puzzleSource !== "local") {  
+        delete appState.currents[sessionKey];  
+      }  
+  
+      if (!appState.currents[sessionKey]) {  
+        appState.currents[sessionKey] = { puzzleId: sessionKey, date: puzzle.id, source: puzzleSource, playerId: currentPlayerId(), clues: puzzle.clues.map(() => ({ solved: false, value: "" })), elapsed: 0, finished: false };  
+      }  
+      appState.current = appState.currents[sessionKey];  
+      elapsed = appState.current.elapsed || 0;  
+      saveState();  
+    }  
+  
+    function renderPuzzle() {  
+      ensureCurrentPuzzle();  
+      const startDate = new Date("2026-05-06T00:00:00");  
+      const puzzleDate = new Date(`${todayISO}T00:00:00`);  
+      const puzzleNumber = Math.max(1, Math.floor((puzzleDate - startDate) / 86400000) + 1);  
+  
+      $("leaderboardDate").textContent = `ReWorded #${puzzleNumber}`;  
+      $("timer").textContent = formatTime(elapsed);  
+      updateHintButton();  
+        
+      const finished = !!appState.current?.finished;  
+      $("gameLeaderboard").style.display = finished ? "" : "none";  
+      $("leaderboardLocked").style.display = finished ? "none" : "";  
+  
+      $("lettersBoard").innerHTML = puzzle.clues.map((clue, index) => {  
+        const solved = appState.current.clues[index]?.solved;  
+        return `<div class="letter-tile ${solved ? "revealed" : ""}">${solved ? clue.letter : "?"}</div>`;  
+      }).join("");  
+  
+      $("clues").innerHTML = puzzle.clues.map((clue, index) => {  
+        const current = appState.current.clues[index] || { solved: false, value: "" };  
+        return `  
+          <div class="clue-row ${current.solved ? "solved" : ""}">  
+            <div class="clue-number">${index + 1}</div>  
+            <div class="clue-text">${clue.prompt}</div>  
+            <input class="answer-input" data-clue="${index}" value="${escapeHtml(current.value)}" ${current.solved ? "disabled" : ""} placeholder="Clue answer" autocomplete="off" />  
+          </div>  
+        `;  
+      }).join("");  
+  
+      const solvedCount = appState.current.clues.filter(item => item.solved).length;  
+      $("progressText").textContent = `${solvedCount}/5`;  
+      $("progressFill").style.width = `${(solvedCount / puzzle.clues.length) * 100}%`;  
+        
+      $("finalInput").disabled = finished;  
+      $("finalInput").value = finished ? puzzle.word : "";  
+        
+      const submitBtn = $("finalForm").querySelector("button[type='submit']");  
+      const persistentShareBtn = $("persistentShareBtn");  
+      if (submitBtn) submitBtn.style.display = finished ? "none" : "";  
+      if (persistentShareBtn) persistentShareBtn.style.display = finished ? "" : "none";  
+  
+      $("finalInput").addEventListener("focus", startTimer);  
+      document.querySelectorAll(".answer-input").forEach(input => {  
+        input.addEventListener("focus", startTimer);  
+        input.addEventListener("input", handleClueInput);  
+      });  
+  
+      renderLeaderboards();  
+      renderComments();  
+    }   
+  
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#039;"}[c])); }  
+  
+    function updateHintButton() {  
+      const hintBtn = $("hintBtn");  
+      if (!hintBtn) return;  
+      hintBtn.disabled = appState.current.finished || hintCooldown > 0;  
+      hintBtn.textContent = hintCooldown > 0 ? `Hint ${hintCooldown}s` : "Hint";  
+    }  
+  
+    function startHintCooldown() {  
+      hintCooldown = 20; updateHintButton();  
+      if (hintTimerHandle) clearInterval(hintTimerHandle);  
+      hintTimerHandle = setInterval(() => {  
+        hintCooldown = Math.max(0, hintCooldown - 1);  
+        updateHintButton();  
+        if (hintCooldown === 0) { clearInterval(hintTimerHandle); hintTimerHandle = null; }  
+      }, 1000);  
+    }  
+  
+    function showHint() {  
+      if (hintCooldown > 0 || appState.current.finished) return;  
+      startTimer();  
+      const unsolved = appState.current.clues.map((item, index) => ({ ...item, index })).filter(item => !item.solved);  
+      if (!unsolved.length) { $("gameMessage").textContent = "All clue letters are already revealed."; $("gameMessage").className = "message good"; return; }  
+      const pick = unsolved[Math.floor(Math.random() * unsolved.length)];  
+      const clue = puzzle.clues[pick.index];  
+      const preview = clue.answer.length <= 2 ? clue.answer : `${clue.answer[0]}${"-".repeat(Math.max(1, clue.answer.length - 2))}${clue.answer[clue.answer.length - 1]}`;  
+      $("gameMessage").textContent = `Hint for clue ${pick.index + 1}: the answer looks like ${preview}.`;  
+      $("gameMessage").className = "message";  
+      startHintCooldown();  
+    }  
+  
+    function handleClueInput(event) {  
+      const inputElement = event.target;  
+      const index = Number(inputElement.dataset.clue);  
+      const value = inputElement.value;  
+      appState.current.clues[index].value = value;  
+  
+      if (normalize(value) === normalize(puzzle.clues[index].answer)) {  
+        appState.current.clues[index].solved = true;  
+        inputElement.disabled = true;  
+        inputElement.closest('.clue-row').classList.add('solved');  
+        playSound('reveal');  
+          
+        $("lettersBoard").innerHTML = puzzle.clues.map((clue, idx) => {  
+          const solved = appState.current.clues[idx]?.solved;  
+          return `<div class="letter-tile ${solved ? "revealed" : ""}">${solved ? clue.letter : "?"}</div>`;  
+        }).join("");  
+  
+        const solvedCount = appState.current.clues.filter(item => item.solved).length;  
+        $("progressText").textContent = `${solvedCount}/5`;  
+        $("progressFill").style.width = `${(solvedCount / puzzle.clues.length) * 100}%`;  
+        saveState();  
+      }  
+    }  
+  
+    function startTimer() {  
+      if (appState.current.finished || timerHandle) return;  
+      startedAt = Date.now() - elapsed * 1000;  
+      timerHandle = setInterval(() => {  
+        elapsed = Math.floor((Date.now() - startedAt) / 1000);  
+        appState.current.elapsed = elapsed;  
+        $("timer").textContent = formatTime(elapsed);  
+        if (elapsed % 5 === 0) saveState();  
+      }, 250);  
+    }  
+  
+    function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; appState.current.elapsed = elapsed; saveState(); }  
+  
+    function finishGame() {  
+      stopTimer();  
+      appState.current.clues = puzzle.clues.map((clue) => ({ solved: true, value: clue.answer }));  
+      appState.current.finished = true;  
+      const playerId = currentPlayerId();  
+      const result = { time: elapsed, at: Date.now(), name: user?.displayName || appState.profileName || "Guest Player", photoURL: user?.photoURL || "", uid: playerId };  
+      appState.results[`${playerId}::${puzzle.id}`] = result;  
+  
+      const boardKey = `letter-clues-${puzzle.id}`;  
+      const existing = appState.leaderboard[boardKey] || [];  
+      appState.leaderboard[boardKey] = [...existing.filter(e => e.uid !== playerId), result].sort((a, b) => a.time - b.time).slice(0, 10);  
+      saveState();  
+      syncResult(result);  
+      renderPuzzle();  
+      $("finishCopy").textContent = `You solved ${puzzle.word} in ${formatTime(elapsed)}.`;  
+      $("finishModal").classList.add("open");  
+    }  
+  
+    function renderLeaderboards() {  
+      if (!puzzle) return; // Added safety check here  
+        
+      const rows = appState.leaderboard[`letter-clues-${puzzle.id}`] || [];  
+      $("gameLeaderboard").innerHTML = rows.length ? rows.map((entry, index) => {  
+        const image = entry.photoURL ? `<img class="avatar" src="${entry.photoURL}" alt="">` : ``;  
+        return `<div class="leader-row"><div class="leader-person"><span style="font-weight: 750; color: var(--muted); margin-right: 6px; width: 18px;">${index + 1}.</span>${image}<div class="leader-name">${escapeHtml(entry.name || "Player")}</div></div><div class="time">${formatTime(entry.time)}</div></div>`;  
+      }).join("") : `<div class="small">No finishes yet. Be the first on today&apos;s board.</div>`;  
+  
+      const allResults = Object.entries(appState.results || {}).filter(([k, r]) => k.startsWith(`${currentPlayerId()}::`) || r?.uid === currentPlayerId()).map(([, r]) => r);  
+      const best = allResults.length ? Math.min(...allResults.map(r => r.time)) : null;  
+      $("bestPill").textContent = `Best ${best == null ? "--" : formatTime(best)}`;  
+        
+      let streak = 0; const cursor = new Date(`${todayISO}T00:00:00`);  
+      if (!Object.entries(appState.results || {}).some(([k, r]) => k === todayISO && r?.uid === currentPlayerId())) cursor.setDate(cursor.getDate() - 1);  
+      while (true) {  
+        if (!Object.entries(appState.results || {}).some(([k, r]) => k === toLocalISODate(cursor) && r?.uid === currentPlayerId())) break;  
+        streak += 1; cursor.setDate(cursor.getDate() - 1);  
+      }  
+      $("streakPill").textContent = `Streak ${streak}`;  
+    }  
+  
+    function renderComments() {  
+      const panel = $("commentPanel");  
+      const finished = !!appState.current?.finished;  
+      panel.classList.toggle("visible", finished);  
+        
+      $("commentMeta").textContent = finished ? `For ${new Date(`${todayISO}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "After your run";  
+      $("commentInput").disabled = !finished;   
+      $("commentSubmitBtn").disabled = !finished;  
+      
+      const merged = new Map();  
+      [...cloudComments].forEach(entry => {   
+        if (entry && entry.uid) merged.set(entry.uid, entry);   
+      });  
+        
+      const comments = Array.from(merged.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));  
+      
+      $("commentList").innerHTML = comments.length ? comments.map(entry => {  
+        const avatarImg = entry.photoURL   
+          ? `<img src="${entry.photoURL}" class="avatar" style="width:20px; height:20px; margin-right:6px;">`   
+          : `<div class="avatar" style="width:20px; height:20px; margin-right:6px; background:var(--line); display:inline-block;"></div>`;  
+      
+        return `  
+          <article class="comment-card">  
+            <div class="comment-meta">  
+              <span style="display:flex; align-items:center;">  
+                ${avatarImg}   
+                <strong>${escapeHtml(entry.name)}</strong>  
+              </span>  
+              <span>${escapeHtml(entry.dateLabel || "")}</span>  
+            </div>  
+            <div class="comment-body">${escapeHtml(entry.text || "")}</div>  
+          </article>  
+        `;  
+      }).join("") : finished ? `<div class="small">No comments yet. Start the post-game chatter.</div>` : "";  
+    }  
+  
+    async function submitComment(event) {  
+      event.preventDefault();   
+      const text = $("commentInput").value.trim();  
+      if (!text) return;  
+      if (!firebase) return;  
+      
+      $("commentSubmitBtn").disabled = true;   
+      $("commentStatus").textContent = "Posting…";  
+      
+      try {  
+        const commentId = `reworded_${todayISO}_${currentPlayerId()}`;  
+          
+        await firebase.setDoc(firebase.doc(firebase.db, "comments", commentId), {  
+          puzzleId: todayISO,  
+          uid: currentPlayerId(),  
+          name: user?.displayName || appState.profileName || "Guest Player",  
+          photoURL: user?.photoURL || "",  
+          text,  
+          game: "reworded",  
+          createdAtMs: Date.now(),  
+          updatedAt: firebase.serverTimestamp()  
+        }, { merge: true });  
+      
+        $("commentInput").value = "";   
+        $("commentStatus").textContent = "Comment posted!";  
+        $("commentStatus").className = "comment-status good";  
+      } catch (error) {   
+        $("commentStatus").textContent = "Post failed. Try again.";   
+        $("commentStatus").className = "comment-status bad";   
+      } finally {   
+        $("commentSubmitBtn").disabled = false;   
+      }  
+    }  
+  
+    function renderProfile() {  
+      const authLabel = document.getElementById("authLabel");  
+      if (authLabel) authLabel.textContent = user ? (user.displayName?.split(" ")[0] || "Account") : "Sign in";  
+    }  
+  
+    async function initFirebase() {  
+      try {  
+        const [{ initializeApp }, { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut }, { getFirestore, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where }] = await Promise.all([  
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"), import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"), import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")  
+        ]);  
+        firebase = { auth: getAuth(initializeApp(FIREBASE_CONFIG)), db: getFirestore(), provider: new GoogleAuthProvider(), signInWithPopup, signOut, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where };  
+          
+       onAuthStateChanged(firebase.auth, async (account) => {  
+          user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;  
+            
+          if (account && firebase.onSnapshot) {  
+             firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {  
+                if (docSnap.exists()) {  
+                   const data = docSnap.data();  
+                   let updated = false;  
+                   if (data.reworded_results) {  
+                       const merged = { ...appState.results, ...data.reworded_results };  
+                       if (JSON.stringify(merged) !== JSON.stringify(appState.results)) {  
+                           appState.results = merged;  
+                           updated = true;  
+                       }  
+                   }  
+                   if (data.reworded_current && data.reworded_current.date === puzzle.id) {  
+                       const remote = data.reworded_current;  
+                       const remoteSolved = remote.clues?.filter(c=>c.solved).length || 0;  
+                       const localSolved = appState.current.clues?.filter(c=>c.solved).length || 0;  
+                       if ((remote.finished && !appState.current.finished) || (!appState.current.finished && remoteSolved > localSolved)) {  
+                           appState.current = remote;  
+                           if (remote.elapsed) elapsed = remote.elapsed;  
+                           updated = true;  
+                       }  
+                   }  
+                   if (updated) {  
+                       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));  
+                       renderPuzzle();  
+                   }  
+                }  
+             });  
+          }  
+          renderProfile();  
+        });  
+        
+        // Listeners moved OUTSIDE of onAuthStateChanged so guests can load them
+        if (firebase.onSnapshot) {
+             firebase.onSnapshot(  
+               firebase.query(  
+                 firebase.collection(firebase.db, "leaderboards", `letter-clues-${todayISO}`, "entries"),   
+                 firebase.orderBy("time", "asc"),   
+                 firebase.limit(10)  
+               ),   
+               (snap) => {  
+                 appState.leaderboard[`letter-clues-${todayISO}`] = snap.docs.map(d => d.data());   
+                 saveState();   
+                 renderLeaderboards();  
+               }  
+             );  
+  
+             firebase.onSnapshot(  
+               firebase.query(  
+                 firebase.collection(firebase.db, "comments"),   
+                 firebase.where("puzzleId", "==", todayISO),  
+                 firebase.where("game", "==", "reworded"),  
+                 firebase.limit(50)  
+               ),   
+               (snap) => {  
+                 cloudComments = snap.docs.map(d => {   
+                   const entry = d.data();   
+                   return {   
+                     uid: entry.uid,   
+                     name: entry.name || "Player",  
+                     photoURL: entry.photoURL || "",  
+                     text: entry.text || "",   
+                     createdAt: entry.createdAtMs || 0,   
+                     dateLabel: entry.createdAtMs ? new Date(entry.createdAtMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""   
+                   };   
+                 }).sort((a, b) => b.createdAt - a.createdAt); 
+                 renderComments();  
+               }  
+             );  
+        }
+  
+        await loadCloudPuzzle();  
+      } catch (error) {}  
+    }  
+    
+    async function authAction() {  
+      if (!firebase) { $("finishTitle").textContent = "Firebase not configured"; $("finishModal").classList.add("open"); return; }  
+      try { if (firebase.auth.currentUser) await firebase.signOut(firebase.auth); else await firebase.signInWithPopup(firebase.auth, firebase.provider); } catch (error) {}  
+    }  
+  
+    async function syncResult(result) {  
+      if (!firebase) return;   
+      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", `letter-clues-${puzzle.id}`, "entries", currentPlayerId()), { ...result, uid: currentPlayerId(), puzzleId: puzzle.id, game: "letter-clues", updatedAt: firebase.serverTimestamp() }, { merge: true });  
+    }  
+  
+    function shareResult() {  
+      const result = appState.results[`${currentPlayerId()}::${puzzle.id}`];  
+      const puzzleNumber = Math.max(1, Math.floor((new Date(`${puzzle.id}T00:00:00`) - new Date("2026-05-06T00:00:00")) / 86400000) + 1);  
+      const text = result ? `BitsPlay - ReWorded #${puzzleNumber}\nIt took me ${formatTime(result.time)} to solve today's ReWorded puzzle, let me know how long you took! \njenishestmoizavut.github.io/BitsPlay/reworded.html` : "BitsPlay - ReWorded\njenishestmoizavut.github.io/BitsPlay/reworded.html";  
+      if (navigator.share) navigator.share({ text }).catch(() => {}); else { navigator.clipboard?.writeText(text); $("finishCopy").textContent = "Result copied to clipboard."; }  
+    }  
+  
+    $("authBtn").addEventListener("click", authAction);  
+    $("themeBtn").addEventListener("click", () => { document.body.classList.toggle("dark"); localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light"); });  
+    $("closeModalBtn").addEventListener("click", () => $("finishModal").classList.remove("open"));  
+    $("shareBtn").addEventListener("click", shareResult);  
+    $("hintBtn").addEventListener("click", showHint);  
+    $("commentForm").addEventListener("submit", submitComment);  
+    $("finalForm").addEventListener("submit", (event) => {  
+      event.preventDefault(); startTimer();  
+      if (normalize($("finalInput").value) === normalize(puzzle.word)) {  
+        $("gameMessage").textContent = "Correct."; $("gameMessage").className = "message good"; playSound('win'); finishGame();  
+      } else {  
+        $("gameMessage").textContent = "Not quite. Try rearranging the revealed letters."; $("gameMessage").className = "message bad"; playSound('error');   
+        const inputElement = $("finalInput"); inputElement.classList.remove("shake"); void inputElement.offsetWidth; inputElement.classList.add("shake");  
+      }  
+    });  
+  
+    if ($("persistentShareBtn")) $("persistentShareBtn").addEventListener("click", shareResult);  
+    window.addEventListener("beforeunload", stopTimer);  
+    if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");  
+    initFirebase(); 
+  </script>  </body>  
 </html>
+
