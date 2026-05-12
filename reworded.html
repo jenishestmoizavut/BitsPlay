@@ -459,10 +459,15 @@
     function ensureCurrentPuzzle() {
       appState.currents = appState.currents || {};
       const sessionKey = `${currentPlayerId()}::${puzzle.id}`;
-
-      if (appState.currents[sessionKey] && appState.currents[sessionKey].source === "local" && puzzleSource !== "local") {
-        delete appState.currents[sessionKey];
-      }
+// Preserve local progress when the cloud puzzle arrives.
+// Instead of deleting the user's run, upgrade it to the published source.
+if (
+  appState.currents[sessionKey] &&
+  appState.currents[sessionKey].source === "local" &&
+  puzzleSource !== "local"
+) {
+  appState.currents[sessionKey].source = "published";
+}
 
       if (!appState.currents[sessionKey]) {
         appState.currents[sessionKey] = { puzzleId: sessionKey, date: puzzle.id, source: puzzleSource, playerId: currentPlayerId(), clues: puzzle.clues.map(() => ({ solved: false, value: "" })), elapsed: 0, finished: false };
