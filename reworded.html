@@ -460,13 +460,22 @@
       appState.currents = appState.currents || {};
       const sessionKey = `${currentPlayerId()}::${puzzle.id}`;
 // Preserve local progress when the cloud puzzle arrives.
-// Instead of deleting the user's run, upgrade it to the published source.
 if (
   appState.currents[sessionKey] &&
   appState.currents[sessionKey].source === "local" &&
   puzzleSource !== "local"
 ) {
-  appState.currents[sessionKey].source = "published";
+  const existing = appState.currents[sessionKey];
+
+  // Preserve solved clues and elapsed time,
+  // but safely upgrade the session structure.
+  appState.currents[sessionKey] = {
+    ...existing,
+    source: "published",
+    puzzleId: sessionKey,
+    date: puzzle.id,
+    playerId: currentPlayerId()
+  };
 }
 
       if (!appState.currents[sessionKey]) {
