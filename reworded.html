@@ -368,6 +368,7 @@
     }
 
     function saveState() {
+      if (!puzzle || !puzzle.id) return;
       appState.currents = appState.currents || {};
       appState.currents[`${currentPlayerId()}::${puzzle.id}`] = appState.current;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ results: appState.results, leaderboard: appState.leaderboard, comments: appState.comments, currents: appState.currents, profileName: appState.profileName }));
@@ -430,18 +431,23 @@
     async function loadCloudPuzzle() {
       try {
         const cloudPuzzle = await getCloudPuzzle();
-        if (!cloudPuzzle) return;
-        puzzle = cloudPuzzle;
-        puzzleSource = cloudPuzzle.source;
+        
+        if (!cloudPuzzle) {
+          puzzle = FALLBACK_PUZZLES[0];
+          puzzle.id = "fallback-error-state";
+          puzzleSource = "local";
+        } else {
+          puzzle = cloudPuzzle;
+          puzzleSource = cloudPuzzle.source;
+        }
+
         ensureCurrentPuzzle();
         renderPuzzle();
 
         // If user is signed in, disable inputs until Firestore confirms today's state
-        // (prevents playing again on a second device before the cloud sync arrives)
         if (firebase?.auth?.currentUser && !appState.current.finished) {
           document.querySelectorAll(".answer-input").forEach(i => i.disabled = true);
           $("finalInput").disabled = true;
-          // Show a small non-blocking notice in the game message area
           const msg = $("gameMessage");
           if (msg) { msg.id = "cloudCheckMsg"; msg.textContent = "Checking your progress…"; msg.className = "message"; }
         }
@@ -452,7 +458,6 @@
       appState.currents = appState.currents || {};
       const sessionKey = `${currentPlayerId()}::${puzzle.id}`;
       
-      // CRITICAL FIX: If we just loaded the Cloud puzzle, but the save file was created using the Local fallback, Nuke the save file.
       if (appState.currents[sessionKey] && appState.currents[sessionKey].source === "local" && puzzleSource !== "local") {
         delete appState.currents[sessionKey];
       }
@@ -574,7 +579,6 @@
       timerHandle = setInterval(() => {
         const currentElapsed = Math.floor((Date.now() - startedAt) / 1000);
         
-        // Only run this logic once per second when the number actually changes
         if (currentElapsed !== elapsed) {
           elapsed = currentElapsed;
           appState.current.elapsed = elapsed;
@@ -711,14 +715,12 @@
           user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
 
           if (!account) {
-            // No user signed in — unlock inputs immediately
             document.querySelectorAll(".answer-input").forEach(i => { if (!appState.current?.finished) i.disabled = false; });
             const fi = $("finalInput"); if (fi && !appState.current?.finished) fi.disabled = false;
             const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
           }
           
           if (account && firebase.onSnapshot) {
-             // 1. SYNC USER STATE (Streaks and Results)
              firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
                 const unlockInputs = () => {
                   document.querySelectorAll(".answer-input").forEach(i => { 
@@ -751,14 +753,13 @@
                        const remoteSolved = remote.clues?.filter(c=>c.solved).length || 0;
                        const localSolved = appState.current.clues?.filter(c=>c.solved).length || 0;
 
-                       // If cloud says finished: lock this device immediately — no replaying
                        if (remote.finished && !appState.current.finished) {
                            stopTimer();
                            appState.current = remote;
                            if (remote.elapsed) elapsed = remote.elapsed;
                            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
                            renderPuzzle();
-                           return; // don't unlockInputs — game is over
+                           return; 
                        }
 
                        if (!appState.current.finished && remoteSolved > localSolved) {
@@ -774,13 +775,11 @@
                 }
                 unlockInputs();
              }, () => {
-                // Firestore read failed (new user, no doc) — unlock anyway
                 document.querySelectorAll(".answer-input").forEach(i => { i.disabled = false; });
                 const fi = $("finalInput"); if (fi) fi.disabled = false;
                 const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
              });
 
-             // 2. LEADERBOARD LISTENER (Only for ReWorded)
              firebase.onSnapshot(
                firebase.query(
                  firebase.collection(firebase.db, "leaderboards", `letter-clues-${todayISO}`, "entries"), 
@@ -794,7 +793,6 @@
                }
              );
 
-             // 3. COMMENTS LISTENER (Only for ReWorded)
              firebase.onSnapshot(
                firebase.query(
                  firebase.collection(firebase.db, "comments"), 
@@ -825,7 +823,6 @@
       } catch (error) { console.warn("Firebase init error:", error); }
     }
 
-    // Safety fallback: if Firebase auth takes >5s, unlock inputs anyway
     setTimeout(() => {
       if (!appState.current?.finished) {
         document.querySelectorAll(".answer-input").forEach(i => i.disabled = false);
@@ -858,34 +855,27 @@
     $("hintBtn").addEventListener("click", showHint);
     $("commentForm").addEventListener("submit", submitComment);
 
-    // Delegated input events — bound ONCE on the stable container, survives renderPuzzle() re-renders
     $("clues").addEventListener("focus", (e) => {
       if (e.target.matches(".answer-input")) startTimer();
-    }, true); // capture phase so focus bubbles correctly
+    }, true); 
     $("clues").addEventListener("input", (e) => {
       if (e.target.matches(".answer-input")) handleClueInput(e);
     });
     $("finalInput").addEventListener("focus", startTimer);
 
-    // FIX 1: Guard against puzzle being null before submit runs
-    // FIX 2: Guard against game already being finished
-    // FIX 3: Guard against finalInput being disabled (still locked from cloud check)
     $("finalForm").addEventListener("submit", (event) => {
       event.preventDefault();
 
-      // Puzzle hasn't loaded from Firebase yet
       if (!puzzle) {
         $("gameMessage").textContent = "Puzzle not loaded yet. Please wait a moment.";
         $("gameMessage").className = "message bad";
         return;
       }
 
-      // Game is already finished — shouldn't be submittable but guard anyway
       if (appState.current?.finished) {
         return;
       }
 
-      // Input is still locked from cloud sync check — tell the user to wait
       if ($("finalInput").disabled) {
         $("gameMessage").textContent = "Still checking your progress. Please wait.";
         $("gameMessage").className = "message bad";
@@ -913,7 +903,7 @@
         playSound('error');
         const inputElement = $("finalInput");
         inputElement.classList.remove("shake");
-        void inputElement.offsetWidth; // force reflow to restart animation
+        void inputElement.offsetWidth; 
         inputElement.classList.add("shake");
       }
     });
@@ -921,7 +911,7 @@
     if ($("persistentShareBtn")) $("persistentShareBtn").addEventListener("click", shareResult);
     window.addEventListener("beforeunload", stopTimer);
     if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
-    initFirebase(); // ensureCurrentPuzzle and renderPuzzle are safely called inside loadCloudPuzzle()
+    initFirebase(); 
   </script>
 </body>
 </html>
