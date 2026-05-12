@@ -305,10 +305,6 @@
       appId: "1:136928912243:web:8a154edc72b3081184db06"
     };
 
-    const FALLBACK_PUZZLES = [
-      { word: "ERROR", clues: [{ prompt: "Connecting to database...", answer: "Wait", letter: "E" }, { prompt: "If you see this, Firebase failed.", answer: "Fail", letter: "R" }, { prompt: "Check your console for errors.", answer: "Error", letter: "R" }, { prompt: "Ensure your Firestore rules allow reads.", answer: "Rules", letter: "O" }, { prompt: "And check your network.", answer: "Net", letter: "R" }] }
-    ];
-
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
     function unlockAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); document.body.removeEventListener('touchstart', unlockAudio); document.body.removeEventListener('click', unlockAudio); }
@@ -367,7 +363,6 @@
       } catch { return { results: {}, leaderboard: {}, comments: {}, currents: {}, profileName: "Guest Player" }; }
     }
 
-    // FIX: Guard against puzzle being null before accessing puzzle.id
     function saveState() {
       if (!puzzle) return;
       appState.currents = appState.currents || {};
@@ -430,7 +425,16 @@
     async function loadCloudPuzzle() {
       try {
         const cloudPuzzle = await getCloudPuzzle();
-        if (!cloudPuzzle) return;
+        
+        if (!cloudPuzzle) {
+          const msg = $("gameMessage");
+          if (msg) {
+            msg.textContent = "Today's puzzle isn't available yet. Check back later!";
+            msg.className = "message bad";
+          }
+          return;
+        }
+
         puzzle = cloudPuzzle;
         puzzleSource = cloudPuzzle.source;
         ensureCurrentPuzzle();
@@ -442,7 +446,14 @@
           const msg = $("gameMessage");
           if (msg) { msg.id = "cloudCheckMsg"; msg.textContent = "Checking your progress…"; msg.className = "message"; }
         }
-      } catch (error) { console.warn("Cloud puzzle error:", error); }
+      } catch (error) { 
+        console.warn("Cloud puzzle error:", error); 
+        const msg = $("gameMessage");
+        if (msg) {
+          msg.textContent = "Error loading today's puzzle. Please check your connection.";
+          msg.className = "message bad";
+        }
+      }
     }
 
     function ensureCurrentPuzzle() {
@@ -462,7 +473,6 @@
     }
 
     function renderPuzzle() {
-      // FIX: Guard — do nothing if puzzle hasn't loaded yet
       if (!puzzle) return;
 
       ensureCurrentPuzzle();
@@ -543,7 +553,6 @@
     }
 
     function handleClueInput(event) {
-      // FIX: Guard — do nothing if puzzle hasn't loaded yet
       if (!puzzle) return;
 
       const inputElement = event.target;
@@ -605,7 +614,6 @@
     }
 
     function renderLeaderboards() {
-      // FIX: Guard — do nothing if puzzle hasn't loaded yet
       if (!puzzle) return;
 
       const rows = appState.leaderboard[`letter-clues-${puzzle.id}`] || [];
@@ -628,7 +636,6 @@
     }
 
     function renderComments() {
-      // FIX: Guard — do nothing if puzzle hasn't loaded yet
       if (!puzzle) return;
 
       const panel = $("commentPanel");
@@ -716,7 +723,6 @@
           user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;
 
           if (!account) {
-            // No user signed in — unlock inputs immediately
             document.querySelectorAll(".answer-input").forEach(i => { if (!appState.current?.finished) i.disabled = false; });
             const fi = $("finalInput"); if (fi && !appState.current?.finished) fi.disabled = false;
             const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
@@ -725,9 +731,7 @@
           if (account && firebase.onSnapshot) {
             // 1. SYNC USER STATE
             firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
-              // FIX: Guard — puzzle may not be loaded yet when this fires
               if (!puzzle) {
-                // Still unlock inputs so user isn't stuck
                 document.querySelectorAll(".answer-input").forEach(i => { i.disabled = false; });
                 const fi = $("finalInput"); if (fi) fi.disabled = false;
                 const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
@@ -765,7 +769,7 @@
                     if (remote.elapsed) elapsed = remote.elapsed;
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
                     renderPuzzle();
-                    return; // game is over, don't unlock
+                    return; 
                   }
 
                   if (!appState.current.finished && remoteSolved > localSolved) {
@@ -781,7 +785,6 @@
               }
               unlockInputs();
             }, () => {
-              // Firestore read failed — unlock anyway
               document.querySelectorAll(".answer-input").forEach(i => { i.disabled = false; });
               const fi = $("finalInput"); if (fi) fi.disabled = false;
               const checkingMsg = $("cloudCheckMsg"); if (checkingMsg) checkingMsg.remove();
@@ -795,7 +798,6 @@
                 firebase.limit(10)
               ),
               (snap) => {
-                // FIX: Guard — puzzle may not be loaded yet when this fires
                 if (!puzzle) return;
                 appState.leaderboard[`letter-clues-${todayISO}`] = snap.docs.map(d => d.data());
                 saveState();
@@ -812,7 +814,6 @@
                 firebase.limit(50)
               ),
               (snap) => {
-                // FIX: Guard — puzzle may not be loaded yet when this fires
                 if (!puzzle) return;
                 cloudComments = snap.docs.map(d => {
                   const entry = d.data();
@@ -836,11 +837,11 @@
 
       } catch (error) {
         console.warn("Firebase init error:", error);
-        // Fallback: load a local puzzle so the game is still playable
-        puzzle = { ...FALLBACK_PUZZLES[0], id: todayISO };
-        puzzleSource = "local";
-        ensureCurrentPuzzle();
-        renderPuzzle();
+        const msg = $("gameMessage");
+        if (msg) {
+          msg.textContent = "Could not connect to the database. Please check your network.";
+          msg.className = "message bad";
+        }
       }
     }
 
@@ -877,7 +878,6 @@
     $("hintBtn").addEventListener("click", showHint);
     $("commentForm").addEventListener("submit", submitComment);
 
-    // Delegated input events — bound ONCE on the stable container, survives renderPuzzle() re-renders
     $("clues").addEventListener("focus", (e) => {
       if (e.target.matches(".answer-input")) startTimer();
     }, true);
@@ -889,17 +889,14 @@
     $("finalForm").addEventListener("submit", (event) => {
       event.preventDefault();
 
-      // FIX: Puzzle hasn't loaded from Firebase yet
       if (!puzzle) {
         $("gameMessage").textContent = "Puzzle not loaded yet. Please wait a moment.";
         $("gameMessage").className = "message bad";
         return;
       }
 
-      // Game is already finished
       if (appState.current?.finished) return;
 
-      // Input is still locked from cloud sync check
       if ($("finalInput").disabled) {
         $("gameMessage").textContent = "Still checking your progress. Please wait.";
         $("gameMessage").className = "message bad";
