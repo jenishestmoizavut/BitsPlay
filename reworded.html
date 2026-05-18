@@ -406,7 +406,7 @@
       }  
   
       if (!appState.currents[sessionKey]) {  
-        appState.currents[sessionKey] = { puzzleId: sessionKey, date: puzzle.id, source: puzzleSource, playerId: currentPlayerId(), clues: puzzle.clues.map(() => ({ solved: false, value: "" })), elapsed: 0, finished: false };  
+        appState.currents[sessionKey] = { puzzleId: sessionKey, date: puzzle.id, source: puzzleSource, playerId: currentPlayerId(), clues: puzzle.clues.map(() => ({ solved: false, value: "" })), finalValue: "", elapsed: 0, finished: false };  
       }  
       appState.current = appState.currents[sessionKey];  
       elapsed = appState.current.elapsed || 0;  
@@ -448,7 +448,7 @@
       $("progressFill").style.width = `${(solvedCount / puzzle.clues.length) * 100}%`;  
         
       $("finalInput").disabled = finished;  
-      $("finalInput").value = finished ? puzzle.word : "";  
+      $("finalInput").value = finished ? puzzle.word : (appState.current.finalValue || "");  
         
       const submitBtn = $("finalForm").querySelector("button[type='submit']");  
       const persistentShareBtn = $("persistentShareBtn");  
@@ -495,6 +495,11 @@
       $("gameMessage").textContent = `Hint for clue ${pick.index + 1}: the answer looks like ${preview}.`;  
       $("gameMessage").className = "message";  
       startHintCooldown();  
+    }  
+  
+    function handleFinalInput(event) {  
+      if (!appState.current || appState.current.finished) return;  
+      appState.current.finalValue = event.target.value;  
     }  
   
     function handleClueInput(event) {  
@@ -617,7 +622,7 @@
       if (!firebase) return;  
       
       $("commentSubmitBtn").disabled = true;   
-      $("commentStatus").textContent = "Posting…";  
+      $("commentStatus").textContent = "Posting ";  
       
       try {  
         const commentId = `reworded_${todayISO}_${currentPlayerId()}`;  
@@ -757,6 +762,7 @@
     $("shareBtn").addEventListener("click", shareResult);  
     $("hintBtn").addEventListener("click", showHint);  
     $("commentForm").addEventListener("submit", submitComment);  
+    $("finalInput").addEventListener("input", handleFinalInput);  
     $("finalForm").addEventListener("submit", (event) => {  
       event.preventDefault(); startTimer();  
       if (normalize($("finalInput").value) === normalize(puzzle.word)) {  
@@ -773,4 +779,3 @@
     initFirebase(); 
   </script>  </body>  
 </html>
-
