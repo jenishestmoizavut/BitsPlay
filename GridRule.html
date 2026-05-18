@@ -815,7 +815,7 @@
     $("closeModalBtn").addEventListener("click", () => $("finishModal").classList.remove("open"));
 
     const doShare = () => {
-      const text = `Gridrule\nI completed today's grid in ${formatTime(elapsed)}.\njenishestmoizavut.github.io/BitsPlay/gridrule.html`;
+      const text = `Gridrule\nI completed today's grid in ${formatTime(elapsed)}.\njenishestmoizavut.github.io/BitsPlay/GridRule.html`;
       if (navigator.share) navigator.share({ text }).catch(()=>{});
       else { navigator.clipboard?.writeText(text); $("finishCopy").textContent = "Copied to clipboard."; }
     };
