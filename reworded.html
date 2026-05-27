@@ -305,9 +305,11 @@
     let user = appState.user || null;  
     let timerHandle = null;  
     let startedAt = null;  
+    let lastSavedElapsed = -1;
     let hintCooldown = 0;  
     let hintTimerHandle = null;  
     let cloudComments = [];  
+    let remoteRunLoaded = false;  
       
     const $ = (id) => document.getElementById(id);  
     const normalize = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, "");  
@@ -326,19 +328,15 @@
         return { results: parsed.results || {}, leaderboard: parsed.leaderboard || {}, comments: parsed.comments || {}, currents: parsed.currents || {}, profileName: parsed.profileName || "Guest Player" };  
       } catch { return { results: {}, leaderboard: {}, comments: {}, currents: {}, profileName: "Guest Player" }; }  
     }  
-    function saveState() {  
+    function persistLocalState() {
       appState.currents = appState.currents || {};  
       appState.currents[`${currentPlayerId()}::${puzzle.id}`] = appState.current;  
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ results: appState.results, leaderboard: appState.leaderboard, comments: appState.comments, currents: appState.currents, profileName: appState.profileName }));  
+    }
   
-      // Real-time Cloud Sync  
-      if (firebase && user) {  
-         firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), {  
-             reworded_current: appState.current,  
-             reworded_results: appState.results,  
-             updatedAt: firebase.serverTimestamp()  
-         }, { merge: true });  
-      }  
+    function saveState() {  
+      if (!puzzle || !appState.current) return;
+      persistLocalState();
     }  
   
     function field(data, names, fallback = "") {  
@@ -389,13 +387,74 @@
     async function loadCloudPuzzle() {  
       try {  
         const cloudPuzzle = await getCloudPuzzle();  
-        if (!cloudPuzzle) return;  
+        if (!cloudPuzzle) {
+          showConnectionLost("Connection lost. ReWorded needs today&apos;s online puzzle to start.");
+          return;
+        }  
         puzzle = cloudPuzzle;  
         puzzleSource = cloudPuzzle.source;  
         ensureCurrentPuzzle();  
         renderPuzzle();  
-      } catch (error) { console.warn("Cloud puzzle error:", error); }  
+        if (user?.uid) await hydrateRemoteRun(user.uid);
+      } catch (error) {
+        console.warn("Cloud puzzle error:", error);
+        showConnectionLost("Connection lost. Please check your internet and reload ReWorded.");
+      }  
     }  
+
+    function showConnectionLost(message) {
+      $("leaderboardDate").textContent = "ReWorded";
+      $("lettersBoard").innerHTML = "";
+      $("clues").innerHTML = "";
+      $("gameMessage").innerHTML = message;
+      $("gameMessage").className = "message bad";
+      $("hintBtn").disabled = true;
+      $("finalInput").disabled = true;
+      const submitBtn = $("finalForm").querySelector("button[type='submit']");
+      if (submitBtn) submitBtn.disabled = true;
+    }
+
+    async function hydrateRemoteRun(uid) {
+      if (!firebase || !uid || !puzzle || remoteRunLoaded || timerHandle) return;
+      remoteRunLoaded = true;
+
+      try {
+        const docSnap = await firebase.getDoc(firebase.doc(firebase.db, "users", uid));
+        if (!docSnap.exists()) return;
+
+        const data = docSnap.data();
+        let updated = false;
+
+        if (data.reworded_results) {
+          const merged = { ...appState.results, ...data.reworded_results };
+          if (JSON.stringify(merged) !== JSON.stringify(appState.results)) {
+            appState.results = merged;
+            updated = true;
+          }
+        }
+
+        const remote = data.reworded_current;
+        if (remote && remote.date === puzzle.id && !appState.current.finished) {
+          const remoteSolved = remote.clues?.filter(c => c.solved).length || 0;
+          const localSolved = appState.current.clues?.filter(c => c.solved).length || 0;
+          const hasLocalInput = appState.current.clues?.some(c => c.value) || appState.current.finalValue;
+
+          if (remote.finished || remoteSolved > localSolved || (!hasLocalInput && remote.elapsed > (appState.current.elapsed || 0))) {
+            appState.current = remote;
+            appState.currents[`${currentPlayerId()}::${puzzle.id}`] = remote;
+            elapsed = remote.elapsed || 0;
+            updated = true;
+          }
+        }
+
+        if (updated) {
+          persistLocalState();
+          renderPuzzle();
+        }
+      } catch (error) {
+        console.warn("Remote run load failed:", error);
+      }
+    }
   
     function ensureCurrentPuzzle() {  
       appState.currents = appState.currents || {};  
@@ -533,13 +592,16 @@
         elapsed = Math.floor((Date.now() - startedAt) / 1000);  
         appState.current.elapsed = elapsed;  
         $("timer").textContent = formatTime(elapsed);  
-        if (elapsed % 5 === 0) saveState();  
+        if (elapsed > 0 && elapsed % 5 === 0 && elapsed !== lastSavedElapsed) {
+          lastSavedElapsed = elapsed;
+          saveState();
+        }  
       }, 250);  
     }  
   
     function stopTimer() { if (timerHandle) clearInterval(timerHandle); timerHandle = null; appState.current.elapsed = elapsed; saveState(); }  
   
-    function finishGame() {  
+    async function finishGame() {  
       stopTimer();  
       appState.current.clues = puzzle.clues.map((clue) => ({ solved: true, value: clue.answer }));  
       appState.current.finished = true;  
@@ -551,9 +613,13 @@
       const existing = appState.leaderboard[boardKey] || [];  
       appState.leaderboard[boardKey] = [...existing.filter(e => e.uid !== playerId), result].sort((a, b) => a.time - b.time).slice(0, 10);  
       saveState();  
-      syncResult(result);  
+      const synced = await syncResult(result);  
       renderPuzzle();  
-      $("finishCopy").textContent = `You solved ${puzzle.word} in ${formatTime(elapsed)}.`;  
+      $("finishCopy").textContent = synced ? `You solved ${puzzle.word} in ${formatTime(elapsed)}.` : `You solved ${puzzle.word} in ${formatTime(elapsed)}, but the connection was lost before it reached the leaderboard.`;  
+      if (!synced) {
+        $("gameMessage").textContent = "Connection lost. Your solve is saved on this device, but it was not posted online.";
+        $("gameMessage").className = "message bad";
+      }
       $("finishModal").classList.add("open");  
     }  
   
@@ -661,39 +727,10 @@
         ]);  
         firebase = { auth: getAuth(initializeApp(FIREBASE_CONFIG)), db: getFirestore(), provider: new GoogleAuthProvider(), signInWithPopup, signOut, collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where };  
           
-       onAuthStateChanged(firebase.auth, async (account) => {  
+        onAuthStateChanged(firebase.auth, async (account) => {  
           user = account ? { uid: account.uid, displayName: account.displayName || "Player", photoURL: account.photoURL || "" } : null;  
-            
-          if (account && firebase.onSnapshot) {  
-             firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {  
-                if (docSnap.exists()) {  
-                   const data = docSnap.data();  
-                   let updated = false;  
-                   if (data.reworded_results) {  
-                       const merged = { ...appState.results, ...data.reworded_results };  
-                       if (JSON.stringify(merged) !== JSON.stringify(appState.results)) {  
-                           appState.results = merged;  
-                           updated = true;  
-                       }  
-                   }  
-                   if (data.reworded_current && data.reworded_current.date === puzzle.id) {  
-                       const remote = data.reworded_current;  
-                       const remoteSolved = remote.clues?.filter(c=>c.solved).length || 0;  
-                       const localSolved = appState.current.clues?.filter(c=>c.solved).length || 0;  
-                       if ((remote.finished && !appState.current.finished) || (!appState.current.finished && remoteSolved > localSolved)) {  
-                           appState.current = remote;  
-                           if (remote.elapsed) elapsed = remote.elapsed;  
-                           updated = true;  
-                       }  
-                   }  
-                   if (updated) {  
-                       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));  
-                       renderPuzzle();  
-                   }  
-                }  
-             });  
-          }  
           renderProfile();  
+          if (account && puzzle) await hydrateRemoteRun(account.uid);
         });  
         
         // Listeners moved OUTSIDE of onAuthStateChanged so guests can load them
@@ -736,7 +773,10 @@
         }
   
         await loadCloudPuzzle();  
-      } catch (error) {}  
+      } catch (error) {
+        console.warn("Firebase init failed:", error);
+        showConnectionLost("Connection lost. ReWorded needs internet to load today&apos;s puzzle.");
+      }  
     }  
     
     async function authAction() {  
@@ -745,8 +785,24 @@
     }  
   
     async function syncResult(result) {  
-      if (!firebase) return;   
-      await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", `letter-clues-${puzzle.id}`, "entries", currentPlayerId()), { ...result, uid: currentPlayerId(), puzzleId: puzzle.id, game: "letter-clues", updatedAt: firebase.serverTimestamp() }, { merge: true });  
+      if (!firebase || !navigator.onLine) return false;
+
+      try {
+        await firebase.setDoc(firebase.doc(firebase.db, "leaderboards", `letter-clues-${puzzle.id}`, "entries", currentPlayerId()), { ...result, uid: currentPlayerId(), puzzleId: puzzle.id, game: "letter-clues", updatedAt: firebase.serverTimestamp() }, { merge: true });
+
+        if (user?.uid) {
+          await firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), {
+            reworded_current: appState.current,
+            reworded_results: appState.results,
+            updatedAt: firebase.serverTimestamp()
+          }, { merge: true });
+        }
+
+        return true;
+      } catch (error) {
+        console.warn("Result sync failed:", error);
+        return false;
+      }  
     }  
   
     function shareResult() {  
@@ -763,10 +819,10 @@
     $("hintBtn").addEventListener("click", showHint);  
     $("commentForm").addEventListener("submit", submitComment);  
     $("finalInput").addEventListener("input", handleFinalInput);  
-    $("finalForm").addEventListener("submit", (event) => {  
+    $("finalForm").addEventListener("submit", async (event) => {  
       event.preventDefault(); startTimer();  
       if (normalize($("finalInput").value) === normalize(puzzle.word)) {  
-        $("gameMessage").textContent = "Correct."; $("gameMessage").className = "message good"; playSound('win'); finishGame();  
+        $("gameMessage").textContent = "Correct."; $("gameMessage").className = "message good"; playSound('win'); await finishGame();  
       } else {  
         $("gameMessage").textContent = "Not quite. Try rearranging the revealed letters."; $("gameMessage").className = "message bad"; playSound('error');   
         const inputElement = $("finalInput"); inputElement.classList.remove("shake"); void inputElement.offsetWidth; inputElement.classList.add("shake");  
