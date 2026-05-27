@@ -83,6 +83,8 @@
     .cell:hover { border-color: var(--accent); }
     .cell.filled { border-style: solid; background: var(--panel-soft); }
     .cell.error-highlight { border-color: var(--bad); background: var(--bad-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 30%, transparent); }
+    .cell.hint-highlight { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent); }
+    .cell.solution-ghost::after { content: attr(data-ghost); opacity: 0.45; font-size: 1.4rem; }
     
     .inventory-panel { display: flex; justify-content: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;}
     .inv-slot { width: 64px; height: 72px; border-radius: var(--radius); border: 2px solid var(--line); background: var(--panel-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease; position: relative;}
@@ -99,8 +101,12 @@
     .rule-card.met .rule-status { background: var(--good); border-color: var(--good); }
     .rule-card.fail { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 40%, transparent); color: var(--bad); }
     .rule-card.fail .rule-status { background: var(--bad); border-color: var(--bad); }
+    .rule-card.hint-highlight { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
 
     .action-row { display: flex; justify-content: center; margin-top: 24px; gap: 12px;}
+    .hint-message { min-height: 22px; margin: 12px 18px 0; text-align: center; color: var(--soft); font-size: 0.88rem; font-weight: 650; }
+    .hint-message.bad { color: var(--bad); }
+    .hint-message.good { color: var(--good); }
 
     /* Colors and Shapes */
     .color-R { color: var(--c-red); }
@@ -222,6 +228,7 @@
           <button class="btn primary" id="checkBtn" style="min-width: 160px;">Check Board</button>
           <button class="btn primary" id="persistentShareBtn" style="display: none; min-width: 160px;">Share Result</button>
         </div>
+        <div class="hint-message" id="hintMessage"></div>
       </section>
 
       <aside class="drawer">
@@ -368,21 +375,125 @@
     function isEdge(idx)   { const r = Math.floor(idx/5); const c = idx%5; return r===0 || r===4 || c===0 || c===4; }
     function isCorner(idx) { return idx===0 || idx===4 || idx===20 || idx===24; }
 
+    function shuffle(items, rng) {
+      const copy = [...items];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function tokenHTML(c) { return `<span class="inline-token ${SHAPES[c].cls}">${SHAPES[c].icon}</span>`; }
+    function tokenName(c) { return `${tokenHTML(c)}`; }
+    function rowCells(row) { return [0,1,2,3,4].map(c => row * 5 + c); }
+    function colCells(col) { return [0,1,2,3,4].map(r => r * 5 + col); }
+    function diagonalCells(which) { return which === "main" ? [0,6,12,18,24] : [4,8,12,16,20]; }
+    const REGIONS = {
+      "top-left": [0,1,2,5,6,7,10,11,12],
+      "top-right": [2,3,4,7,8,9,12,13,14],
+      "bottom-left": [10,11,12,15,16,17,20,21,22],
+      "bottom-right": [12,13,14,17,18,19,22,23,24],
+      "center cross": [2,7,10,11,12,13,14,17,22]
+    };
+
+    function countInCells(board, cells, color) { return cells.filter(i => board[i] === color).length; }
+
+    function generateSolution(rng) {
+      const colorOrder = shuffle(COLORS, rng);
+      const rowOrder = shuffle([0,1,2,3,4], rng);
+      const colOrder = shuffle([0,1,2,3,4], rng);
+      const solution = new Array(25);
+
+      rowOrder.forEach((sourceRow, displayRow) => {
+        colOrder.forEach((sourceCol, displayCol) => {
+          solution[displayRow * 5 + displayCol] = colorOrder[(sourceRow + sourceCol) % COLORS.length];
+        });
+      });
+
+      return solution;
+    }
+
+    function makeRulePool(solution, rng) {
+      const rules = [];
+      const colors = shuffle(COLORS, rng);
+
+      colors.forEach(color => {
+        const maxLine = Math.max(
+          ...[0,1,2,3,4].map(r => countInCells(solution, rowCells(r), color)),
+          ...[0,1,2,3,4].map(c => countInCells(solution, colCells(c), color))
+        );
+        rules.push({ type: 'MAX_LINE', color, max: maxLine, text: `No more than ${maxLine} ${tokenName(color)} in any row or column.` });
+      });
+
+      for (let a = 0; a < colors.length; a++) {
+        for (let b = a + 1; b < colors.length; b++) {
+          const c1 = colors[a], c2 = colors[b];
+          const touches = solution.some((cell, i) => cell === c1 && getOrthogonal(i).some(n => solution[n] === c2));
+          if (!touches) rules.push({ type: 'NO_TOUCH', c1, c2, text: `${tokenName(c1)} cannot touch ${tokenName(c2)} (up, down, left, right).` });
+        }
+      }
+
+      colors.forEach(color => {
+        const edgeCount = solution.filter((cell, i) => cell === color && isEdge(i)).length;
+        if (edgeCount >= 2) rules.push({ type: 'MIN_EDGE', color, min: edgeCount, text: `At least ${edgeCount} ${tokenName(color)} must be on the outer edge.` });
+      });
+
+      const center = solution[12];
+      const bannedCenter = shuffle(COLORS.filter(c => c !== center), rng).slice(0, 3);
+      rules.push({ type: 'CENTER_NOT', colors: bannedCenter, text: `The center cannot contain ${bannedCenter.map(tokenName).join(", ")}.` });
+
+      [0,1,2,3,4].forEach(row => {
+        const color = colors[row];
+        const exact = countInCells(solution, rowCells(row), color);
+        rules.push({ type: 'ROW_EXACT', row, color, exact, text: `Row ${row + 1} contains exactly ${exact} ${tokenName(color)}.` });
+      });
+
+      [0,1,2,3,4].forEach(col => {
+        const color = colors[(col + 2) % colors.length];
+        const exact = countInCells(solution, colCells(col), color);
+        rules.push({ type: 'COL_EXACT', col, color, exact, text: `Column ${col + 1} contains exactly ${exact} ${tokenName(color)}.` });
+      });
+
+      ["main", "anti"].forEach(which => {
+        const color = colors[which === "main" ? 1 : 3];
+        const exact = countInCells(solution, diagonalCells(which), color);
+        rules.push({ type: 'DIAGONAL_EXACT', diagonal: which, color, exact, text: `The ${which === "main" ? "top-left to bottom-right" : "top-right to bottom-left"} diagonal contains exactly ${exact} ${tokenName(color)}.` });
+      });
+
+      Object.entries(REGIONS).forEach(([name, cells], index) => {
+        const color = colors[index % colors.length];
+        const exact = countInCells(solution, cells, color);
+        rules.push({ type: 'REGION_EXACT', name, cells, color, exact, text: `The ${name} region contains exactly ${exact} ${tokenName(color)}.` });
+      });
+
+      return shuffle(rules.filter(rule => rule.exact !== 0), rng);
+    }
+
+    function solutionIsValid(solution, rules) {
+      const counts = COLORS.map(color => solution.filter(cell => cell === color).length);
+      return solution.length === 25 && counts.every(count => count === 5) && rules.every(rule => !evaluateRule(rule, solution, 25).fail);
+    }
+
     function generateDailyPuzzle(dateStr) {
-      const rng = mulberry32(xmur3(dateStr)());
-      const getShapeHTML = (c) => `<span class="inline-token ${SHAPES[c].cls}">${SHAPES[c].icon}</span>`;
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const rng = mulberry32(xmur3(`${dateStr}-${attempt}`)());
+        const solution = generateSolution(rng);
+        const pool = makeRulePool(solution, rng);
+        const rules = pool.slice(0, 8);
+        if (rules.length >= 7 && solutionIsValid(solution, rules)) {
+          return { solution, rules, validated: true, variant: ["Classic", "Edges", "Diagonals", "Regions"][Math.floor(rng() * 4)] };
+        }
+      }
 
-      let roles = [...COLORS].sort(() => rng() - 0.5);
-      let [c1, c2, c3, c4, c5] = roles;
-
-      return { rules: [
-        { type: 'MAX_LINE',   color: c1,             max: 2, text: `No more than 2 ${getShapeHTML(c1)} in any row or column.` },
-        { type: 'NO_TOUCH',   c1: c2,   c2: c3,             text: `${getShapeHTML(c2)} cannot touch ${getShapeHTML(c3)} (up, down, left, right).` },
-        { type: 'ONLY_EDGE',  color: c4,                    text: `${getShapeHTML(c4)} can only be placed on the outer edges.` },
-        { type: 'MUST_TOUCH', c1: c5,   c2: c1,             text: `Every ${getShapeHTML(c5)} must touch at least one ${getShapeHTML(c1)}.` },
-        { type: 'NO_CORNER',  c1: c2,   c2: c4,             text: `Corners cannot contain ${getShapeHTML(c2)} or ${getShapeHTML(c4)}.` },
-        { type: 'MAX_LINE',   color: c3,             max: 2, text: `No more than 2 ${getShapeHTML(c3)} in any row or column.` }
-      ]};
+      const fallbackSolution = generateSolution(mulberry32(xmur3(`${dateStr}-fallback`)()));
+      const fallbackRules = makeRulePool(fallbackSolution, mulberry32(xmur3(`${dateStr}-fallback-rules`)())).slice(0, 8);
+      return {
+        solution: fallbackSolution,
+        rules: fallbackRules,
+        variant: "Classic",
+        validated: solutionIsValid(fallbackSolution, fallbackRules)
+      };
     }
 
     // ==========================================
@@ -403,7 +514,7 @@
     let activeBrush = null;
     let timerHandle = null; let elapsed = 0; let startedAt = null; let lastSyncTime = -1;
     let gameStarted = false; // true once Play is pressed
-    let hintCooldown = 0; let hintTimerHandle = null;
+    let hintCooldown = 0; let hintTimerHandle = null; let hintStep = 0;
     let cloudComments = []; let leaderboardUnsub = null; let commentsUnsub = null;
 
     function currentPlayerId() { return user?.uid || localStorage.getItem("guest_uid") || "guest"; }
@@ -461,8 +572,11 @@
 
       if (appState.finished) { renderFinishedState(); return; }
 
+      $("levelIndicator").textContent = `${dailyPuzzle.variant || "Daily"} Puzzle`;
       $("checkBtn").textContent = "Check Board"; $("checkBtn").style.display = "";
       $("hintBtn").style.display = "";
+      $("hintMessage").textContent = "";
+      $("hintMessage").className = "hint-message";
 
       grid = new Array(25).fill(null);
       inventory = { R:5, B:5, G:5, Y:5, P:5 };
@@ -547,13 +661,63 @@
       }
     }
 
+    function evaluateRule(rule, board, totalPlaced) {
+      const full = totalPlaced === 25;
+      let fail = false;
+      let pending = !full;
+
+      if (rule.type === 'MAX_LINE') {
+        for (let r = 0; r < 5; r++) if (countInCells(board, rowCells(r), rule.color) > rule.max) fail = true;
+        for (let c = 0; c < 5; c++) if (countInCells(board, colCells(c), rule.color) > rule.max) fail = true;
+      }
+      else if (rule.type === 'NO_TOUCH') {
+        for (let i = 0; i < 25; i++) if (board[i] === rule.c1 && getOrthogonal(i).some(n => board[n] === rule.c2)) fail = true;
+      }
+      else if (rule.type === 'ONLY_EDGE') {
+        for (let i = 0; i < 25; i++) if (board[i] === rule.color && !isEdge(i)) fail = true;
+      }
+      else if (rule.type === 'MIN_EDGE') {
+        const current = board.filter((cell, i) => cell === rule.color && isEdge(i)).length;
+        if (full && current < rule.min) fail = true;
+      }
+      else if (rule.type === 'MUST_TOUCH') {
+        if (full) {
+          for (let i = 0; i < 25; i++) if (board[i] === rule.c1 && !getOrthogonal(i).some(n => board[n] === rule.c2)) fail = true;
+        }
+      }
+      else if (rule.type === 'NO_CORNER') {
+        for (let i = 0; i < 25; i++) if (isCorner(i) && (board[i] === rule.c1 || board[i] === rule.c2)) fail = true;
+      }
+      else if (rule.type === 'CENTER_NOT') {
+        if (rule.colors.includes(board[12])) fail = true;
+      }
+      else if (rule.type === 'ROW_EXACT') {
+        const count = countInCells(board, rowCells(rule.row), rule.color);
+        if (count > rule.exact || (full && count !== rule.exact)) fail = true;
+      }
+      else if (rule.type === 'COL_EXACT') {
+        const count = countInCells(board, colCells(rule.col), rule.color);
+        if (count > rule.exact || (full && count !== rule.exact)) fail = true;
+      }
+      else if (rule.type === 'DIAGONAL_EXACT') {
+        const count = countInCells(board, diagonalCells(rule.diagonal), rule.color);
+        if (count > rule.exact || (full && count !== rule.exact)) fail = true;
+      }
+      else if (rule.type === 'REGION_EXACT') {
+        const count = countInCells(board, rule.cells, rule.color);
+        if (count > rule.exact || (full && count !== rule.exact)) fail = true;
+      }
+
+      return { fail, pending: pending && !fail };
+    }
+
     // Returns indices of cells that are currently breaking a rule
     function getViolatingCells() {
       let bad = new Set();
       dailyPuzzle.rules.forEach(rule => {
         if (rule.type === 'MAX_LINE') {
-          for (let r=0;r<5;r++) { let cs=[]; for(let c=0;c<5;c++) if(grid[r*5+c]===rule.color) cs.push(r*5+c); if(cs.length>rule.max) cs.forEach(c=>bad.add(c)); }
-          for (let c=0;c<5;c++) { let cs=[]; for(let r=0;r<5;r++) if(grid[r*5+c]===rule.color) cs.push(r*5+c); if(cs.length>rule.max) cs.forEach(c=>bad.add(c)); }
+          for (let r=0;r<5;r++) { const cells = rowCells(r).filter(i => grid[i] === rule.color); if (cells.length > rule.max) cells.forEach(i => bad.add(i)); }
+          for (let c=0;c<5;c++) { const cells = colCells(c).filter(i => grid[i] === rule.color); if (cells.length > rule.max) cells.forEach(i => bad.add(i)); }
         }
         else if (rule.type === 'NO_TOUCH') {
           for (let i=0;i<25;i++) { if(grid[i]===rule.c1) getOrthogonal(i).forEach(n=>{if(grid[n]===rule.c2){bad.add(i);bad.add(n);}}); }
@@ -564,8 +728,18 @@
         else if (rule.type === 'NO_CORNER') {
           for (let i=0;i<25;i++) { if(isCorner(i) && (grid[i]===rule.c1||grid[i]===rule.c2)) bad.add(i); }
         }
+        else if (rule.type === 'CENTER_NOT') {
+          if (rule.colors.includes(grid[12])) bad.add(12);
+        }
+        else if (['ROW_EXACT', 'COL_EXACT', 'DIAGONAL_EXACT', 'REGION_EXACT'].includes(rule.type)) {
+          const cells = rule.type === 'ROW_EXACT' ? rowCells(rule.row)
+            : rule.type === 'COL_EXACT' ? colCells(rule.col)
+            : rule.type === 'DIAGONAL_EXACT' ? diagonalCells(rule.diagonal)
+            : rule.cells;
+          const filled = cells.filter(i => grid[i] === rule.color);
+          if (filled.length > rule.exact) filled.forEach(i => bad.add(i));
+        }
         else if (rule.type === 'MUST_TOUCH') {
-          // Only flag if the piece is completely surrounded (no empty neighbour to save it)
           for (let i=0;i<25;i++) {
             if (grid[i]===rule.c1) {
               let touches=false, hasEmpty=false;
@@ -583,27 +757,7 @@
       const totalPlaced = grid.filter(c=>c).length;
 
       dailyPuzzle.rules.forEach((rule, idx) => {
-        let fail = false; let pending = false;
-
-        if (rule.type === 'MAX_LINE') {
-          for(let r=0;r<5;r++){let cnt=0;for(let c=0;c<5;c++) if(grid[r*5+c]===rule.color) cnt++;if(cnt>rule.max)fail=true;}
-          for(let c=0;c<5;c++){let cnt=0;for(let r=0;r<5;r++) if(grid[r*5+c]===rule.color) cnt++;if(cnt>rule.max)fail=true;}
-        }
-        else if (rule.type === 'NO_TOUCH') {
-          for(let i=0;i<25;i++){if(grid[i]===rule.c1) getOrthogonal(i).forEach(n=>{if(grid[n]===rule.c2)fail=true;});}
-        }
-        else if (rule.type === 'ONLY_EDGE') {
-          for(let i=0;i<25;i++){if(grid[i]===rule.color && !isEdge(i))fail=true;}
-        }
-        else if (rule.type === 'MUST_TOUCH') {
-          if (totalPlaced === 25) {
-            for(let i=0;i<25;i++){if(grid[i]===rule.c1){let t=false;getOrthogonal(i).forEach(n=>{if(grid[n]===rule.c2)t=true;});if(!t)fail=true;}}
-          } else { pending = true; }
-        }
-        else if (rule.type === 'NO_CORNER') {
-          for(let i=0;i<25;i++){if(isCorner(i)&&(grid[i]===rule.c1||grid[i]===rule.c2))fail=true;}
-        }
-
+        const { fail, pending } = evaluateRule(rule, grid, totalPlaced);
         const el = $(`rule-${idx}`);
         if (el) {
           el.className = 'rule-card ' + (fail ? 'fail' : (!pending && totalPlaced===25 ? 'met' : ''));
@@ -633,20 +787,81 @@
       }, 1000);
     }
 
-    $("hintBtn").addEventListener('click', () => {
-      if (appState.finished || hintCooldown > 0) return;
+    function clearHintMarks() {
+      [...$("gameGrid").children].forEach(cell => {
+        cell.classList.remove("error-highlight", "hint-highlight", "solution-ghost", "shake");
+        cell.removeAttribute("data-ghost");
+      });
+      document.querySelectorAll(".rule-card").forEach(card => card.classList.remove("hint-highlight"));
+    }
+
+    function showHintMessage(text, tone = "") {
+      const message = $("hintMessage");
+      message.innerHTML = text;
+      message.className = `hint-message ${tone}`.trim();
+    }
+
+    function highlightCells(cells, className = "hint-highlight", duration = 1800) {
+      cells.forEach(i => {
+        const el = $("gameGrid").children[i];
+        if (!el) return;
+        el.classList.add(className);
+        setTimeout(() => el.classList.remove(className), duration);
+      });
+    }
+
+    function giveStrategicHint() {
+      clearHintMarks();
       const bad = getViolatingCells();
       if (bad.length > 0) {
         playSound('error');
         bad.forEach(i => {
           const el = $("gameGrid").children[i];
           el.classList.add("error-highlight", "shake");
-          setTimeout(() => el.classList.remove("error-highlight", "shake"), 800);
+          setTimeout(() => el.classList.remove("error-highlight", "shake"), 900);
         });
-      } else {
-        $("hintBtn").textContent = "No conflicts!";
-        setTimeout(() => { if (hintCooldown === 0) $("hintBtn").textContent = "Hint"; }, 2000);
+        showHintMessage("These highlighted cells are already breaking a rule.", "bad");
+        return;
       }
+
+      const placed = grid.filter(Boolean).length;
+      const wrongFilled = grid.map((cell, i) => cell && cell !== dailyPuzzle.solution[i] ? i : null).filter(i => i !== null);
+      const emptyUseful = dailyPuzzle.solution.map((cell, i) => !grid[i] ? i : null).filter(i => i !== null);
+      const ruleIndex = hintStep % dailyPuzzle.rules.length;
+      const ruleEl = $(`rule-${ruleIndex}`);
+      if (ruleEl) {
+        ruleEl.classList.add("hint-highlight");
+        setTimeout(() => ruleEl.classList.remove("hint-highlight"), 1800);
+      }
+
+      if (hintStep % 4 === 0 || placed < 8) {
+        showHintMessage(`Start with this rule: ${dailyPuzzle.rules[ruleIndex].text}`);
+      } else if (wrongFilled.length) {
+        const cell = wrongFilled[0];
+        highlightCells([cell], "hint-highlight");
+        showHintMessage(`One placed token is legal-looking but not part of today's answer. Check row ${Math.floor(cell / 5) + 1}, column ${(cell % 5) + 1}.`);
+      } else if (emptyUseful.length && hintStep % 4 === 3) {
+        const cell = emptyUseful[0];
+        const el = $("gameGrid").children[cell];
+        el.classList.add("solution-ghost", "hint-highlight");
+        el.dataset.ghost = SHAPES[dailyPuzzle.solution[cell]].icon;
+        setTimeout(() => el.classList.remove("solution-ghost", "hint-highlight"), 2200);
+        showHintMessage(`Direct hint: try ${tokenName(dailyPuzzle.solution[cell])} at row ${Math.floor(cell / 5) + 1}, column ${(cell % 5) + 1}.`, "good");
+      } else if (emptyUseful.length) {
+        const nextColor = dailyPuzzle.solution[emptyUseful[0]];
+        const options = emptyUseful.filter(i => dailyPuzzle.solution[i] === nextColor).slice(0, 4);
+        highlightCells(options, "hint-highlight");
+        showHintMessage(`A good next target is ${tokenName(nextColor)}. The highlighted cells are useful places to think about next.`);
+      } else {
+        showHintMessage("No conflicts remain. Try checking the board.", "good");
+      }
+
+      hintStep++;
+    }
+
+    $("hintBtn").addEventListener('click', () => {
+      if (appState.finished || hintCooldown > 0) return;
+      giveStrategicHint();
       startHintCooldown();
     });
 
