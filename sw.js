@@ -1,10 +1,9 @@
-const CACHE_NAME = 'bitsplay-v2'; // Increment version to force update
+const CACHE_NAME = 'bitsplay-v3'; // Increment version to force update
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './BitsPlay.png',
-  './ReWorded.png'
+  './BitsPlay.png'
 ];
 
 self.addEventListener('install', event => {

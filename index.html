@@ -2,281 +2,1119 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#f7f8fb" />
+  <meta name="theme-color" content="#090d16" id="themeColorMeta" />
   <meta name="application-name" content="BitsPlay" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="BitsPlay" />
 
   <title>BitsPlay | Daily Puzzle Games</title>
-  <meta name="description" content="BitsPlay is a collection of daily single-player puzzle games.">
+  <meta name="description" content="Quick, clever daily puzzle games designed for small dopamine hits. Play anywhere on desktop or mobile.">
   <link rel="icon" type="image/png" href="BitsPlay.png" />
-
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="BitsPlay.png" />
-<link rel="canonical" href="https://jenishestmoizavut.github.io/BitsPlay/">
+  <link rel="canonical" href="https://jenishestmoizavut.github.io/BitsPlay/">
 
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://jenishestmoizavut.github.io/BitsPlay/">
-<meta property="og:title" content="BitsPlay | Daily Puzzle Games">
-<meta property="og:description" content="Play simple daily puzzle games like GridRule, Circuit, and ReWorded.">
-<meta property="og:image" content="https://jenishestmoizavut.github.io/BitsPlay/BitsPlay.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jenishestmoizavut.github.io/BitsPlay/">
+  <meta property="og:title" content="BitsPlay | Daily Puzzle Games">
+  <meta property="og:description" content="Quick, clever daily puzzle games designed for small dopamine hits.">
+  <meta property="og:image" content="https://jenishestmoizavut.github.io/BitsPlay/BitsPlay.png">
 
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://jenishestmoizavut.github.io/BitsPlay/BitsPlay.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://jenishestmoizavut.github.io/BitsPlay/BitsPlay.png">
+
   <style>
+    /* ========================================================
+       BITPLAY DESIGN SYSTEM v3.0
+       Modern, Tactile, Responsive (Mobile + Desktop)
+       ======================================================== */
     :root {
-      --bg: #f7f8fb; --panel: #ffffff; --panel-soft: #f1f5f9; --line: #dfe5ee;
-      --text: #111827; --soft: #526174; --muted: #7b8797;
-      --accent: #2563eb; --accent-soft: #e9f1ff;
-      --good: #16803c; --good-soft: #e8f7ee;
-      --warn: #a15c07; --warn-soft: #fff3dc;
-      --bad: #b42318; --shadow: 0 20px 50px rgba(15, 23, 42, 0.09);
-      --radius: 8px;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-elevated: #ffffff;
+      --surface-subtle: #f1f5f9;
+      --border: #e2e8f0;
+      --border-highlight: #cbd5e1;
+
+      --text: #0f172a;
+      --text-soft: #475569;
+      --text-muted: #64748b;
+
+      --brand: #3b82f6;
+      --brand-gradient: linear-gradient(135deg, #2563eb, #6366f1);
+      --brand-soft: #eff6ff;
+
+      --crowns-accent: #f59e0b;
+      --crowns-gradient: linear-gradient(135deg, #f59e0b, #d97706);
+      --crowns-bg: #fffbeb;
+      --crowns-border: #fde68a;
+
+      --digits-accent: #0284c7;
+      --digits-gradient: linear-gradient(135deg, #0284c7, #2563eb);
+      --digits-bg: #f0f9ff;
+      --digits-border: #bae6fd;
+
+      --word-accent: #059669;
+      --word-gradient: linear-gradient(135deg, #10b981, #059669);
+      --word-bg: #ecfdf5;
+      --word-border: #a7f3d0;
+
+      --good: #10b981;
+      --good-soft: #ecfdf5;
+      --warn: #f59e0b;
+      --warn-soft: #fffbeb;
+      --danger: #ef4444;
+
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     body.dark {
-      --bg: #0b1020; --panel: #11182a; --panel-soft: #172033; --line: #273349;
-      --text: #edf2f8; --soft: #bec9d8; --muted: #91a0b4;
-      --accent: #60a5fa; --accent-soft: #132944;
-      --good: #5ee08a; --good-soft: #123420;
-      --warn: #f7bd59; --warn-soft: #38280e;
-      --bad: #ff8f87; --shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      --bg: #070a12;
+      --surface: #0e1320;
+      --surface-elevated: #141b2d;
+      --surface-subtle: #192238;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(255, 255, 255, 0.16);
+
+      --text: #f8fafc;
+      --text-soft: #cbd5e1;
+      --text-muted: #8292ab;
+
+      --brand: #60a5fa;
+      --brand-gradient: linear-gradient(135deg, #3b82f6, #818cf8);
+      --brand-soft: rgba(59, 130, 246, 0.14);
+
+      --crowns-accent: #fbbf24;
+      --crowns-gradient: linear-gradient(135deg, #f59e0b, #fbbf24);
+      --crowns-bg: rgba(245, 158, 11, 0.1);
+      --crowns-border: rgba(245, 158, 11, 0.25);
+
+      --digits-accent: #38bdf8;
+      --digits-gradient: linear-gradient(135deg, #0284c7, #38bdf8);
+      --digits-bg: rgba(2, 132, 199, 0.1);
+      --digits-border: rgba(2, 132, 199, 0.25);
+
+      --word-accent: #34d399;
+      --word-gradient: linear-gradient(135deg, #059669, #34d399);
+      --word-bg: rgba(16, 185, 129, 0.1);
+      --word-border: rgba(16, 185, 129, 0.25);
+
+      --good: #34d399;
+      --good-soft: rgba(52, 211, 153, 0.12);
+      --warn: #fbbf24;
+      --warn-soft: rgba(251, 191, 36, 0.12);
+      --danger: #f87171;
+
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
     }
 
-    * { box-sizing: border-box; }
-    html, body { min-height: 100%; }
-    body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; letter-spacing: 0; }
-    button { border: 0; cursor: pointer; color: inherit; font: inherit; }
-    button:disabled { cursor: default; opacity: 0.55; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    button { border: 0; cursor: pointer; color: inherit; font: inherit; background: transparent; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
     a { text-decoration: none; color: inherit; }
 
-    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 36px; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0 16px; border-bottom: 1px solid var(--line); }
-    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .brand-mark { width: 34px; height: 34px; border-radius: var(--radius); display: grid; place-items: center; background: var(--accent); color: white; font-weight: 800; flex: 0 0 auto; }
-    .brand h1 { font-size: 1.05rem; line-height: 1.1; margin: 0; }
-    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    /* Layout Shell */
+    .app-shell {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 16px 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
 
-    .btn { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 999px; padding: 8px 13px; background: var(--panel-soft); color: var(--soft); border: 1px solid var(--line); font-weight: 650; font-size: 0.86rem; transition: transform 0.12s ease, border-color 0.12s ease; }
-    .btn:hover { transform: translateY(-1px); border-color: var(--accent); }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
-    .btn.icon { width: 38px; padding: 0; }
+    /* Ambient Background Glow */
+    .ambient-glow {
+      position: fixed;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(800px, 100vw);
+      height: 380px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(99, 102, 241, 0.05) 50%, transparent 75%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body.dark .ambient-glow {
+      background: radial-gradient(circle, rgba(96, 165, 250, 0.15) 0%, rgba(129, 140, 248, 0.07) 50%, transparent 75%);
+    }
 
-    .tabs { display: flex; gap: 8px; padding: 14px 0; overflow-x: auto; }
-    .tab { min-width: max-content; border-radius: 999px; padding: 8px 13px; background: transparent; color: var(--soft); font-weight: 700; border: 1px solid transparent; }
-    .tab.active { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 24%, transparent); }
+    /* Top Navigation Bar */
+    .topbar {
+      position: sticky;
+      top: 12px;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 16px;
+      background: color-mix(in srgb, var(--surface) 80%, transparent);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .topbar:hover {
+      border-color: var(--border-highlight);
+    }
 
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--brand-gradient);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+      flex: 0 0 auto;
+      overflow: hidden;
+    }
+    .brand-mark img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      background: var(--brand-soft);
+      color: var(--brand);
+      border: 1px solid color-mix(in srgb, var(--brand) 25%, transparent);
+    }
+    .brand-date {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: none;
+    }
+    @media (min-width: 520px) {
+      .brand-date { display: block; }
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    /* Buttons & Pills */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 7px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 650;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      transition: all 0.16s var(--ease);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-highlight);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .btn.primary {
+      background: var(--brand-gradient);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+    }
+    .btn.primary:hover {
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.38);
+    }
+    .btn.icon-only {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: var(--radius-full);
+    }
+    .streak-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 11px;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 750;
+      background: var(--warn-soft);
+      color: var(--warn);
+      border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* View Switcher Tabs */
+    .segmented-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      width: max-content;
+      margin: 0 auto;
+    }
+    .nav-pill {
+      padding: 6px 18px;
+      border-radius: var(--radius-full);
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.18s var(--ease);
+    }
+    .nav-pill:hover {
+      color: var(--text);
+    }
+    .nav-pill.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Views */
     .view { display: none; }
-    .view.active { display: block; animation: fadeUp 0.22s ease-out both; }
+    .view.active { display: block; animation: fadeSlide 0.28s var(--ease) forwards; }
 
-    .hub-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(270px, 0.8fr); gap: 14px; align-items: start; }
-    .hero { border-radius: var(--radius); padding: 16px 18px; color: var(--text); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); display: grid; gap: 12px; }
-    .hero h2 { margin: 0; font-size: clamp(1.3rem, 2.4vw, 1.8rem); line-height: 1.1; }
-    .hero p { max-width: 680px; margin: 0; color: var(--soft); line-height: 1.45; font-size: 0.92rem; }
-    .hero-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .pill { padding: 5px 9px; font-size: 0.76rem; border: 1px solid var(--line); background: var(--panel-soft); color: var(--soft); border-radius: 999px; font-weight: 700; }
-    .hero-actions { display: flex; gap: 9px; flex-wrap: wrap; }
-
-    .side-panel, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
-    .side-panel { padding: 16px; }
-    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-    .section-title h2, .section-title h3 { margin: 0; font-size: 1rem; }
-    .small { color: var(--muted); font-size: 0.8rem; }
-
-    .game-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
-    .game-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 14px; display: flex; flex-direction: column; gap: 12px; min-height: 170px; transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease; }
-    .game-card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: var(--shadow); }
-    .game-icon { width: 38px; height: 38px; border-radius: var(--radius); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 850; font-size: 1.2rem; }
-    .game-card h3 { margin: 0; font-size: 1.05rem; }
-    .game-card p { margin: -6px 0 auto; color: var(--soft); line-height: 1.45; font-size: 0.88rem; }
-    .locked { opacity: 0.68; filter: grayscale(0.3); }
-
-    .stat-list { display: flex; flex-direction: column; gap: 8px; }
-    .stat-row { min-height: 44px; border-radius: var(--radius); background: var(--panel-soft); border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; }
-    .leader-person { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .leader-name { font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .project-link { transition: all 0.15s ease; }
-    .project-link:hover { border-color: var(--accent); transform: translateY(-1px); }
-
-    @keyframes fadeUp {
+    @keyframes fadeSlide {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    @media (max-width: 880px) {
-      .hub-layout { grid-template-columns: 1fr; }
-      .game-grid { grid-template-columns: 1fr; }
+    /* Hero / Daily Station */
+    .station-hero {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      display: grid;
+      gap: 16px;
     }
-    @media (max-width: 620px) {
-      .shell { width: min(100% - 16px, 1180px); padding-top: 16px; padding-bottom: 22px; }
-      .topbar { flex-direction: column; align-items: flex-start; }
-      .top-actions { width: 100%; justify-content: space-between; margin-top: 10px; }
-      .tabs { padding: 10px 0 12px; gap: 6px; }
+    .station-hero::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--brand-gradient);
+    }
+    .station-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .station-greeting {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--brand);
+    }
+    .station-greeting span.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--good);
+      box-shadow: 0 0 8px var(--good);
+      display: inline-block;
+    }
+    .station-countdown {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 650;
+      color: var(--text-muted);
+      background: var(--surface-subtle);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+    .station-title {
+      font-size: clamp(1.4rem, 3.2vw, 2.1rem);
+      font-weight: 850;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    .station-desc {
+      font-size: 0.96rem;
+      color: var(--text-soft);
+      max-width: 640px;
+      line-height: 1.55;
+    }
+    .station-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    /* Section Headers */
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+      margin-bottom: 2px;
+    }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Game Showcase Grid */
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .game-card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.22s var(--ease), border-color 0.22s var(--ease), box-shadow 0.22s var(--ease);
+      overflow: hidden;
+    }
+    .game-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Specific Game Card Themes */
+    .game-card.theme-crowns:hover {
+      border-color: var(--crowns-border);
+    }
+    .game-card.theme-digits:hover {
+      border-color: var(--digits-border);
+    }
+    .game-card.theme-word:hover {
+      border-color: var(--word-border);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+      flex: 0 0 auto;
+    }
+    .theme-crowns .card-icon-wrap { background: var(--crowns-bg); border: 1px solid var(--crowns-border); }
+    .theme-digits .card-icon-wrap { background: var(--digits-bg); border: 1px solid var(--digits-border); }
+    .theme-word .card-icon-wrap { background: var(--word-bg); border: 1px solid var(--word-border); }
+
+    .card-badge {
+      font-size: 0.72rem;
+      font-weight: 750;
+      padding: 4px 9px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .theme-crowns .card-badge { background: var(--crowns-bg); color: var(--crowns-accent); border: 1px solid var(--crowns-border); }
+    .theme-digits .card-badge { background: var(--digits-bg); color: var(--digits-accent); border: 1px solid var(--digits-border); }
+    .theme-word .card-badge { background: var(--word-bg); color: var(--word-accent); border: 1px solid var(--word-border); }
+
+    .card-info h3 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .card-info p {
+      font-size: 0.88rem;
+      color: var(--text-soft);
+      line-height: 1.48;
+    }
+
+    .card-specs {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      font-weight: 650;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+    .card-spec-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .card-action-btn {
+      width: 100%;
+      min-height: 42px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.16s var(--ease);
+      border: 1px solid transparent;
+    }
+    .theme-crowns .card-action-btn {
+      background: var(--crowns-gradient);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+    }
+    .theme-digits .card-action-btn {
+      background: var(--digits-gradient);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+    }
+    .theme-word .card-action-btn {
+      background: var(--word-gradient);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+    }
+    .card-action-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+    .card-action-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Vault / Archive Callout Box */
+    .vault-banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      box-shadow: var(--shadow-sm);
+      flex-wrap: wrap;
+    }
+    .vault-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 260px;
+    }
+    .vault-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      font-size: 1.3rem;
+      flex: 0 0 auto;
+    }
+    .vault-text h4 {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+    .vault-text p {
+      font-size: 0.86rem;
+      color: var(--text-soft);
+      line-height: 1.4;
+    }
+
+    /* Creator Showcase Bar */
+    .creator-showcase {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
+      box-shadow: var(--shadow-sm);
+    }
+    .creator-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .creator-head span {
+      font-size: 0.78rem;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+    .projects-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .project-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      transition: all 0.16s var(--ease);
+    }
+    .project-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-highlight);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+    }
+    .project-card img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex: 0 0 auto;
+    }
+    .project-info {
+      min-width: 0;
+    }
+    .project-info strong {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 750;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .project-info span {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* Profile View Layout */
+    .profile-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      display: grid;
+      gap: 20px;
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .profile-user {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .profile-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--brand-gradient);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 1.4rem;
+      font-weight: 800;
+      border: 2px solid var(--surface);
+      box-shadow: var(--shadow-sm);
+    }
+    .profile-details h3 {
+      font-size: 1.25rem;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+    }
+    .profile-details p {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+    }
+
+    .stat-matrix {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+    .stat-box {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-box .num {
+      font-size: 1.6rem;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+    .stat-box .label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Modal Sheet for Concept Details */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 10, 18, 0.65);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+    .modal-backdrop.open {
+      display: flex;
+      animation: modalFadeIn 0.2s var(--ease) forwards;
+    }
+    .modal-panel {
+      width: min(480px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border-highlight);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      display: grid;
+      gap: 16px;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ========================================================
+       RESPONSIVE BREAKPOINTS (Mobile-First Polish)
+       ======================================================== */
+    @media (max-width: 900px) {
+      .game-grid {
+        grid-template-columns: 1fr;
+      }
+      .projects-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .app-shell {
+        padding: 12px 14px 40px;
+        gap: 18px;
+      }
+      .topbar {
+        padding: 8px 12px;
+      }
+      .brand-title {
+        font-size: 0.95rem;
+      }
+      .brand-mark {
+        width: 32px;
+        height: 32px;
+      }
+      .station-hero {
+        padding: 18px 18px;
+        border-radius: var(--radius-md);
+      }
+      .station-title {
+        font-size: 1.35rem;
+      }
+      .projects-row {
+        grid-template-columns: 1fr;
+      }
+      .vault-banner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .vault-banner .btn {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <div class="app-shell">
+    <!-- Top Bar Navigation -->
     <header class="topbar">
-      <div class="brand">
-       <img src="BitsPlay.png" alt="BitsPlay Logo" class="brand-mark" style="background: transparent; object-fit: contain; padding: 2px;">
+      <div class="brand-group">
+        <div class="brand-mark">
+          <img src="BitsPlay.png" alt="BitsPlay Logo">
+        </div>
         <div>
-          <h1>BitsPlay</h1>
-          <span style="font-size: 0.65rem; color: var(--muted); font-weight: 600; padding: 2px 6px; background: var(--panel-soft); border-radius: 4px; border: 1px solid var(--line);">v2.1.0</span>
-          <p>Daily single-player puzzle games.</p>
+          <div class="brand-title">
+            <span>BitsPlay</span>
+            <span class="brand-tag">v3.0</span>
+          </div>
+          <div class="brand-date" id="liveDate">Loading date...</div>
         </div>
       </div>
+
       <div class="top-actions">
-        <button class="btn icon" id="themeBtn" type="button" title="Toggle theme" aria-label="Toggle theme">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 3v2.2M12 18.8V21M4.8 4.8l1.55 1.55M17.65 17.65l1.55 1.55M3 12h2.2M18.8 12H21M4.8 19.2l1.55-1.55M17.65 6.35l1.55-1.55" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="12" cy="12" r="3.6" stroke="currentColor" stroke-width="2"/>
+        <div class="streak-badge" title="Daily Completion Streak">
+          <span>🔥</span>
+          <span id="topStreakNum">0</span>
+        </div>
+
+        <button class="btn icon-only" id="themeBtn" type="button" title="Toggle color mode" aria-label="Toggle color mode">
+          <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 3v2.2M12 18.8V21M4.8 4.8l1.55 1.55M17.65 17.65l1.55 1.55M3 12h2.2M18.8 12H21M4.8 19.2l1.55-1.55M17.65 6.35l1.55-1.55" />
+            <circle cx="12" cy="12" r="3.6" />
           </svg>
         </button>
+
         <button class="btn" id="authBtn" type="button">
           <span id="authLabel">Sign in</span>
         </button>
       </div>
     </header>
 
-    <nav class="tabs" aria-label="Main views">
-      <button class="tab active" type="button" data-view="hubView">Today</button>
-      <button class="tab" type="button" data-view="profileView">Profile</button>
+    <!-- Segmented View Switcher -->
+    <nav class="segmented-nav" aria-label="Main Navigation">
+      <button class="nav-pill active" type="button" data-view="hubView">Daily Station</button>
+      <button class="nav-pill" type="button" data-view="profileView">Profile & Stats</button>
     </nav>
 
-    <section class="view active" id="hubView">
-      <div class="hub-layout">
-        <section>
-          <div class="hero">
-            <h2>Today's puzzles are ready.</h2>
-            <p>Jump into ReWorded to test your trivia, or Circuit and GridRule to challenge your logic ;)</p>
-            <div class="hero-actions">
-              <button class="btn primary" type="button" onclick="window.location.href='reworded.html';">Play ReWorded</button>
-              <button class="btn" type="button" onclick="window.location.href='circuit.html';">Play Circuit</button>
-              <button class="btn primary" type="button" onclick="window.location.href='GridRule.html';">Play GridRule</button>
+    <!-- ==========================================
+         VIEW 1: DAILY STATION (MAIN HUB)
+         ========================================== -->
+    <main class="view active" id="hubView">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Daily Station Hero -->
+        <section class="station-hero">
+          <div class="station-meta-row">
+            <div class="station-greeting">
+              <span class="dot"></span>
+              <span id="dynamicGreeting">Welcome to the Lab</span>
+            </div>
+            <div class="station-countdown">
+              <span>⏳</span>
+              <span>Next drop in: <strong id="resetCountdown">--:--:--</strong></span>
             </div>
           </div>
 
-          <div class="game-grid" aria-label="Games">
-            <article class="game-card">
-              <img src="ReWorded.png" alt="ReWorded Logo" class="game-icon" style="background: transparent; object-fit: contain; padding: 2px;">
-              <h3>ReWorded</h3>          
-              <p>Five answer-derived letters; find the missing word!</p>
-              <button class="btn primary" type="button" onclick="window.location.href='reworded.html';">Play</button>
-            </article>
+          <div>
+            <h1 class="station-title">Bite-sized daily puzzle hits.</h1>
+            <p class="station-desc">
+              BitsPlay is being rebuilt from the ground up for clean, clever, satisfying breaks. Zero trivia frustration, zero homework math. Just pure pattern deduction.
+            </p>
+          </div>
 
-            <article class="game-card">
-              <img src="Circuit.png" alt="Circuit Logo" class="game-icon" style="background: transparent; object-fit: contain; padding: 2px; border-radius: var(--radius);">
-              <h3>Circuit</h3>
-              <p>Fill the empty slots with the correct operators to complete the logical circuit.</p>
-              <button class="btn primary" type="button" onclick="window.location.href='circuit.html';">Play</button>
-            </article>
-
-            <article class="game-card">
-              <img src="GridRule.png" alt="Gridrule Logo" class="game-icon" style="background: transparent; object-fit: contain; padding: 2px; border-radius: var(--radius);">
-              <h3>GridRule</h3>
-              <p>Satisfy all logic rules to place the tokens perfectly on a 5x5 grid.</p>
-              <button class="btn primary" type="button" onclick="window.location.href='GridRule.html';">Play</button>
-            </article>
+          <div class="station-actions">
+            <a href="archive/index.html" class="btn primary">
+              <span>🏛️ Explore v1 Archive (3 Games)</span>
+              <span>&rarr;</span>
+            </a>
+            <button class="btn" type="button" onclick="document.getElementById('conceptsSection').scrollIntoView({ behavior: 'smooth' })">
+              See What's Coming Next
+            </button>
           </div>
         </section>
 
-        <aside class="side-panel">
-          <div class="section-title">
-            <h3>Other Projects</h3>
+        <!-- New Games Section -->
+        <div id="conceptsSection">
+          <div class="section-head">
+            <h2 class="section-title">
+              <span>⚡ The New Generation</span>
+            </h2>
+            <span class="section-subtitle">Tactile & Dopamine-First</span>
           </div>
-          <div class="stat-list">
-            <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" rel="noopener" class="stat-row project-link">
-              <div class="leader-person">
-                <img src="jenish-one.png" alt="jenish.one Logo" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid var(--line);">
-                <div class="leader-name">Jenish.One (Contact for sponsorships!)</div>
-              </div>
-              <span class="small">Hub</span>
-            </a>
-            <a href="https://jenishestmoizavut.github.io/attrack" target="_blank" rel="noopener" class="stat-row project-link">
-              <div class="leader-person">
-                <img src="attrack.png" alt="Attrack Logo" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid var(--line);">
-                <div class="leader-name">Attrack</div>
-              </div>
-              <span class="small">App</span>
-            </a>
-            <a href="https://jenishestmoizavut.github.io/simulating-statistics" target="_blank" rel="noopener" class="stat-row project-link">
-              <div class="leader-person">
-                <img src="simstats.png" alt="Simulating Statistics Logo" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid var(--line);">
-                <div class="leader-name">Simulating Statistics</div>
-              </div>
-              <span class="small">App</span>
-            </a>
-            <a href="https://jenishestmoizavut.github.io/MemStore" target="_blank" rel="noopener" class="stat-row project-link">
-              <div class="leader-person">
-                <img src="MemStore.png" alt="MemStore Logo" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid var(--line);">
-                <div class="leader-name">MemStore</div>
-              </div>
-              <span class="small">App</span>
-            </a>
-          </div>
-        </aside>
-      </div>
-    </section>
 
+          <div class="game-grid" style="margin-top: 12px;">
+            <!-- Game Card 1: Crowns -->
+            <article class="game-card theme-crowns">
+              <div class="card-top">
+                <div class="card-icon-wrap">👑</div>
+                <span class="card-badge">Spatial Logic</span>
+              </div>
+              <div class="card-info">
+                <h3>Crowns</h3>
+                <p>One crown per row, column, and colored territory. Tap once to mark empty cells, double tap to claim a crown.</p>
+              </div>
+              <div class="card-specs">
+                <div class="card-spec-item">⏱️ ~2 min</div>
+                <div class="card-spec-item">🎯 Zero Trivia</div>
+                <div class="card-spec-item">✨ Daily Seed</div>
+              </div>
+              <button class="card-action-btn" type="button" onclick="openConceptModal('Crowns', '👑', 'Spatial Elimination on Color Grids', 'Inspired by the best-in-class tactile spatial games like LinkedIn Queens and Star Battle. Players place crowns onto a grid divided into colorful zones. The rules are instant: one crown per row, one per column, one per colored region, and no crowns may touch (even diagonally). Every step is a crisp, satisfying micro-victory.')">
+                <span>Peek Mechanic</span>
+                <span>&rarr;</span>
+              </button>
+            </article>
+
+            <!-- Game Card 2: Digits -->
+            <article class="game-card theme-digits">
+              <div class="card-top">
+                <div class="card-icon-wrap">⚡</div>
+                <span class="card-badge">Number Flow</span>
+              </div>
+              <div class="card-info">
+                <h3>Digits</h3>
+                <p>Hit the target number using five numbers and basic arithmetic (+, −, ×, ÷). No factorials, no square roots.</p>
+              </div>
+              <div class="card-specs">
+                <div class="card-spec-item">⏱️ ~2 min</div>
+                <div class="card-spec-item">🧮 Simple Math</div>
+                <div class="card-spec-item">🎯 Target Rush</div>
+              </div>
+              <button class="card-action-btn" type="button" onclick="openConceptModal('Digits', '⚡', 'Clean Arithmetic Countdown', 'Stripping away complex high-school calculus symbols (factorials, cube roots, modulo) in favor of the pure, addictive Countdown / NYT Digits rush. You are given 5 starting numbers and a target (e.g., target 184 using 3, 7, 12, 25, 50). Tap two numbers, tap an operation, and watch the chain build until you hit bulls-eye.')">
+                <span>Peek Mechanic</span>
+                <span>&rarr;</span>
+              </button>
+            </article>
+
+            <!-- Game Card 3: WordFlow -->
+            <article class="game-card theme-word">
+              <div class="card-top">
+                <div class="card-icon-wrap">🔤</div>
+                <span class="card-badge">Word Craft</span>
+              </div>
+              <div class="card-info">
+                <h3>WordFlow</h3>
+                <p>Clever word association and letter manipulation with zero trivia blockers. Pure pattern recognition.</p>
+              </div>
+              <div class="card-specs">
+                <div class="card-spec-item">⏱️ ~3 min</div>
+                <div class="card-spec-item">📖 Common Words</div>
+                <div class="card-spec-item">💡 Aha! Moments</div>
+              </div>
+              <button class="card-action-btn" type="button" onclick="openConceptModal('WordFlow', '🔤', 'Word Chains & Deductive Swaps', 'Eliminating the frustration of ReWorded where players got blocked by obscure trivia. WordFlow uses common vocabulary in an elegant word-ladder or grid-swap format (similar to Waffle or Crossclimb). Every player has the exact same fair chance to discover the solution without needing an encyclopedia.')">
+                <span>Peek Mechanic</span>
+                <span>&rarr;</span>
+              </button>
+            </article>
+          </div>
+        </div>
+
+        <!-- Vault Archive Banner -->
+        <section class="vault-banner">
+          <div class="vault-content">
+            <div class="vault-icon">🏛️</div>
+            <div class="vault-text">
+              <h4>The BitsPlay Vault (v1 Archive)</h4>
+              <p>ReWorded, Circuit, and GridRule are safely preserved and fully playable for testing.</p>
+            </div>
+          </div>
+          <a href="archive/index.html" class="btn" style="flex: 0 0 auto;">
+            Launch v1 Games &rarr;
+          </a>
+        </section>
+
+        <!-- Other Projects by Jenish -->
+        <section class="creator-showcase">
+          <div class="creator-head">
+            <span>Explore the Ecosystem</span>
+            <span style="font-size: 0.76rem; color: var(--brand); font-weight: 700;">by Jenish</span>
+          </div>
+          <div class="projects-row">
+            <a href="https://jenishestmoizavut.github.io/jenish.one" target="_blank" rel="noopener" class="project-card">
+              <img src="jenish-one.png" alt="Jenish.One Logo">
+              <div class="project-info">
+                <strong>Jenish.One</strong>
+                <span>Creator Hub</span>
+              </div>
+            </a>
+            <a href="https://jenishestmoizavut.github.io/attrack" target="_blank" rel="noopener" class="project-card">
+              <img src="attrack.png" alt="Attrack Logo">
+              <div class="project-info">
+                <strong>Attrack</strong>
+                <span>Habit Tracker</span>
+              </div>
+            </a>
+            <a href="https://jenishestmoizavut.github.io/simulating-statistics" target="_blank" rel="noopener" class="project-card">
+              <img src="simstats.png" alt="Simulating Statistics Logo">
+              <div class="project-info">
+                <strong>Sim Stats</strong>
+                <span>Interactive Math</span>
+              </div>
+            </a>
+            <a href="https://jenishestmoizavut.github.io/MemStore" target="_blank" rel="noopener" class="project-card">
+              <img src="MemStore.png" alt="MemStore Logo">
+              <div class="project-info">
+                <strong>MemStore</strong>
+                <span>Memory Cache</span>
+              </div>
+            </a>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ==========================================
+         VIEW 2: PROFILE & STATS
+         ========================================== -->
     <section class="view" id="profileView">
-      <div class="hub-layout">
-        <section class="panel" style="padding:18px">
-          <div class="section-title">
-            <h2>Your Profile</h2>
-            <span class="small" id="profileMode">Guest</span>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="profile-card">
+          <div class="profile-header">
+            <div class="profile-user">
+              <div class="profile-avatar" id="avatarInitial">G</div>
+              <div class="profile-details">
+                <h3 id="profileName">Guest Player</h3>
+                <p id="profileMode">Playing locally on this device</p>
+              </div>
+            </div>
+            <button class="btn primary" id="profileAuthBtn" type="button">Sign in with Google</button>
           </div>
-          <div class="stat-list">
-            <div class="stat-row"><span>Display name</span><strong id="profileName">Guest Player</strong></div>
-            <div class="stat-row"><span>Firebase Status</span><strong id="firebaseStatusText">Offline</strong></div>
+
+          <div class="section-head" style="margin-top: 10px;">
+            <h4 class="section-title">🏆 Overall Stats</h4>
+            <span class="section-subtitle" id="cloudStatusBadge">Offline (Guest)</span>
           </div>
-          
-          <div class="section-title" style="margin-top: 24px; margin-bottom: 12px;">
-            <h3>Game Stats</h3>
+
+          <div class="stat-matrix">
+            <div class="stat-box">
+              <div class="num" id="totalStreakPill">0</div>
+              <div class="label">Current Streak 🔥</div>
+            </div>
+            <div class="stat-box">
+              <div class="num" id="totalPlayedPill">0</div>
+              <div class="label">Puzzles Played 🎮</div>
+            </div>
+            <div class="stat-box">
+              <div class="num" id="totalBestPill">--:--</div>
+              <div class="label">Fastest Solve ⚡</div>
+            </div>
           </div>
-          <div class="stat-list">
-             <div class="stat-row">
-                <span>ReWorded Streak</span>
-                <strong id="rwStreakPill">0</strong>
-             </div>
-             <div class="stat-row">
-                <span>ReWorded Best Time</span>
-                <strong id="rwBestPill">--:--</strong>
-             </div>
-             <div class="stat-row">
-                <span>Circuit Streak</span>
-                <strong id="cirStreakPill">0</strong>
-             </div>
-             <div class="stat-row">
-                <span>Circuit Best Time</span>
-                <strong id="cirBestPill">--:--</strong>
-             </div>
-             <div class="stat-row">
-                <span>Gridrule Streak</span>
-                <strong id="grStreakPill">0</strong>
-             </div>
-             <div class="stat-row">
-                <span>Gridrule Best Time</span>
-                <strong id="grBestPill">--:--</strong>
-             </div>
+
+          <!-- Archived v1 Breakdown -->
+          <div class="section-head" style="margin-top: 14px;">
+            <h4 class="section-title">🏛️ Archived v1 Records</h4>
           </div>
-        </section>
-        <aside class="side-panel">
-          <div class="section-title">
-            <h3>Cloud Save</h3>
-            <span class="small" id="firebaseStatus">Offline</span>
+
+          <div style="display: grid; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: var(--surface-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <span>ReWorded Streak / Best</span>
+              <strong><span id="rwStreakPill">0</span>d • <span id="rwBestPill">--:--</span></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: var(--surface-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <span>Circuit Streak / Best</span>
+              <strong><span id="cirStreakPill">0</span>d • <span id="cirBestPill">--:--</span></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: var(--surface-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <span>GridRule Streak / Best</span>
+              <strong><span id="grStreakPill">0</span>d • <span id="grBestPill">--:--</span></strong>
+            </div>
           </div>
-          <p class="small" id="authDesc" style="line-height:1.55;margin:0 0 12px">Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.</p>
-          <button class="btn primary" id="profileAuthBtn" type="button">Sign in with Google</button>
-        </aside>
+        </div>
       </div>
     </section>
-  </main>
+  </div>
 
+  <!-- Concept Details Modal -->
+  <div class="modal-backdrop" id="conceptModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-panel">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span id="modalIcon" style="font-size: 1.6rem;">👑</span>
+          <h3 id="modalTitle" style="font-size: 1.2rem; font-weight: 850;">Concept</h3>
+        </div>
+        <button class="btn icon-only" type="button" onclick="closeConceptModal()" aria-label="Close">✕</button>
+      </div>
+      <h4 id="modalSubtitle" style="font-size: 0.95rem; color: var(--brand); font-weight: 750;"></h4>
+      <p id="modalDesc" style="font-size: 0.9rem; color: var(--text-soft); line-height: 1.55;"></p>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+        <button class="btn primary" type="button" onclick="closeConceptModal()">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase & App Script -->
   <script type="module">
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyBXh3V4n1aOcvjZQjo65gzeStApV1RKWak",
@@ -293,102 +1131,116 @@
 
     const $ = (id) => document.getElementById(id);
 
+    // Dynamic greeting & date
+    function updateDateAndGreeting() {
+      const now = new Date();
+      const options = { weekday: 'short', month: 'short', day: 'numeric' };
+      $("liveDate").textContent = now.toLocaleDateString('en-US', options);
+
+      const hour = now.getHours();
+      let greeting = "Good evening";
+      if (hour < 12) greeting = "Good morning";
+      else if (hour < 17) greeting = "Good afternoon";
+      $("dynamicGreeting").textContent = `${greeting}, Puzzle Solver`;
+
+      // Midnight countdown
+      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const diffMs = tomorrow - now;
+      const hours = Math.floor(diffMs / 3600000).toString().padStart(2, '0');
+      const mins = Math.floor((diffMs % 3600000) / 60000).toString().padStart(2, '0');
+      const secs = Math.floor((diffMs % 60000) / 1000).toString().padStart(2, '0');
+      $("resetCountdown").textContent = `${hours}h ${mins}m ${secs}s`;
+    }
+    setInterval(updateDateAndGreeting, 1000);
+    updateDateAndGreeting();
+
+    // Tab Navigation
     function setView(viewId) {
       document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
-      document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewId));
+      document.querySelectorAll(".nav-pill").forEach((pill) => pill.classList.toggle("active", pill.dataset.view === viewId));
+    }
+    document.querySelectorAll(".nav-pill").forEach((pill) => pill.addEventListener("click", () => setView(pill.dataset.view)));
+
+    // Theme Switcher
+    function applyTheme(isDark) {
+      document.body.classList.toggle("dark", isDark);
+      $("themeColorMeta").setAttribute("content", isDark ? "#070a12" : "#f8fafc");
+      localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+    }
+    $("themeBtn").addEventListener("click", () => {
+      applyTheme(!document.body.classList.contains("dark"));
+    });
+    if (localStorage.getItem(THEME_KEY) === "dark" || (!localStorage.getItem(THEME_KEY) && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      applyTheme(true);
     }
 
+    // Modal Controls
+    window.openConceptModal = function(title, icon, subtitle, desc) {
+      $("modalTitle").textContent = title;
+      $("modalIcon").textContent = icon;
+      $("modalSubtitle").textContent = subtitle;
+      $("modalDesc").textContent = desc;
+      $("conceptModal").classList.add("open");
+    };
+    window.closeConceptModal = function() {
+      $("conceptModal").classList.remove("open");
+    };
+    $("conceptModal").addEventListener("click", (e) => {
+      if (e.target === $("conceptModal")) closeConceptModal();
+    });
+
+    // Stats Calculation
     function calculateStats() {
-      const rwState = JSON.parse(localStorage.getItem("daily_games_v1") || "{}");
-      const rwResults = rwState.results || {};
-      
-      const cirState = JSON.parse(localStorage.getItem("circuit_games_v1") || "{}");
-      const cirResults = cirState.results || {};
+      try {
+        const rwState = JSON.parse(localStorage.getItem("daily_games_v1") || "{}");
+        const rwResults = rwState.results || {};
+        const cirState = JSON.parse(localStorage.getItem("circuit_games_v1") || "{}");
+        const cirResults = cirState.results || {};
+        const grState = JSON.parse(localStorage.getItem("gridrule_games_v1") || "{}");
+        const grResults = grState.results || {};
 
-      const grState = JSON.parse(localStorage.getItem("gridrule_games_v1") || "{}");
-      const grResults = grState.results || {};
+        const uid = user?.uid || localStorage.getItem("guest_uid") || "guest";
+        const todayISO = new Date().toISOString().split('T')[0];
+        const toLocalISODate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-      const uid = user?.uid || localStorage.getItem("guest_uid") || "guest";
-      const todayISO = new Date().toISOString().split('T')[0];
-      const toLocalISODate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        const countSolves = (results) => Object.entries(results).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).length;
+        const totalPlayed = countSolves(rwResults) + countSolves(cirResults) + countSolves(grResults);
+        $("totalPlayedPill").textContent = totalPlayed;
 
-      // ReWorded Stats
-      const allRwResults = Object.entries(rwResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r);
-      const rwBestTime = allRwResults.length ? Math.min(...allRwResults.map(r => r.time)) : null;
-      
-      const bestEl = $("rwBestPill");
-      if(bestEl) bestEl.textContent = rwBestTime == null ? "--:--" : `${Math.floor(rwBestTime / 60).toString().padStart(2, "0")}:${Math.floor(rwBestTime % 60).toString().padStart(2, "0")}`;
+        // Best times
+        const times = [
+          ...Object.entries(rwResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r.time),
+          ...Object.entries(cirResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r.time),
+          ...Object.entries(grResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r.time)
+        ].filter(t => typeof t === "number" && t > 0);
 
-      let rwStreak = 0; 
-      const cursor = new Date(`${todayISO}T00:00:00`);
+        const bestOverall = times.length ? Math.min(...times) : null;
+        $("totalBestPill").textContent = bestOverall ? `${Math.floor(bestOverall/60)}m ${bestOverall%60}s` : "--:--";
 
-      if (!Object.entries(rwResults).some(([k, r]) => k.includes(todayISO) && r?.uid === uid)) {
-          cursor.setDate(cursor.getDate() - 1);
+        // Archived details
+        const rwBest = Object.entries(rwResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r.time);
+        $("rwBestPill").textContent = rwBest.length ? `${Math.floor(Math.min(...rwBest)/60)}:${(Math.min(...rwBest)%60).toString().padStart(2, '0')}` : "--:--";
+
+        const cirBest = Object.entries(cirResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r.time);
+        $("cirBestPill").textContent = cirBest.length ? `${Math.floor(Math.min(...cirBest)/60)}:${(Math.min(...cirBest)%60).toString().padStart(2, '0')}` : "--:--";
+
+        const grBest = Object.entries(grResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r.time);
+        $("grBestPill").textContent = grBest.length ? `${Math.floor(Math.min(...grBest)/60)}:${(Math.min(...grBest)%60).toString().padStart(2, '0')}` : "--:--";
+
+      } catch (err) {
+        console.warn("Stats calculation error", err);
       }
-      while (true) {
-        if (!Object.entries(rwResults).some(([k, r]) => k.includes(toLocalISODate(cursor)) && r?.uid === uid)) break;
-        rwStreak += 1; 
-        cursor.setDate(cursor.getDate() - 1);
-      }
-      const streakEl = $("rwStreakPill");
-      if(streakEl) streakEl.textContent = String(rwStreak);
-
-
-      // Circuit Stats
-      const allCirResults = Object.entries(cirResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r);
-      const cirBestTime = allCirResults.length ? Math.min(...allCirResults.map(r => r.time)) : null;
-      
-      const cBestEl = $("cirBestPill");
-      if(cBestEl) cBestEl.textContent = cirBestTime == null ? "--:--" : `${Math.floor(cirBestTime / 60).toString().padStart(2, "0")}:${Math.floor(cirBestTime % 60).toString().padStart(2, "0")}`;
-
-      let cirStreak = 0; 
-      const cCursor = new Date(`${todayISO}T00:00:00`);
-
-      if (!Object.entries(cirResults).some(([k, r]) => k.includes(todayISO) && r?.uid === uid)) {
-          cCursor.setDate(cCursor.getDate() - 1);
-      }
-      while (true) {
-        if (!Object.entries(cirResults).some(([k, r]) => k.includes(toLocalISODate(cCursor)) && r?.uid === uid)) break;
-        cirStreak += 1; 
-        cCursor.setDate(cCursor.getDate() - 1);
-      }
-      const cStreakEl = $("cirStreakPill");
-      if(cStreakEl) cStreakEl.textContent = String(cirStreak);
-
-      // Gridrule Stats
-      const allGrResults = Object.entries(grResults).filter(([k, r]) => k.startsWith(`${uid}::`) || r?.uid === uid).map(([, r]) => r);
-      const grBestTime = allGrResults.length ? Math.min(...allGrResults.map(r => r.time)) : null;
-      
-      const gBestEl = $("grBestPill");
-      if(gBestEl) gBestEl.textContent = grBestTime == null ? "--:--" : `${Math.floor(grBestTime / 60).toString().padStart(2, "0")}:${Math.floor(grBestTime % 60).toString().padStart(2, "0")}`;
-
-      let grStreak = 0; 
-      const gCursor = new Date(`${todayISO}T00:00:00`);
-
-      if (!Object.entries(grResults).some(([k, r]) => k.includes(todayISO) && r?.uid === uid)) {
-          gCursor.setDate(gCursor.getDate() - 1);
-      }
-      while (true) {
-        if (!Object.entries(grResults).some(([k, r]) => k.includes(toLocalISODate(gCursor)) && r?.uid === uid)) break;
-        grStreak += 1; 
-        gCursor.setDate(gCursor.getDate() - 1);
-      }
-      const gStreakEl = $("grStreakPill");
-      if(gStreakEl) gStreakEl.textContent = String(grStreak);
     }
 
     function renderProfile() {
-      $("profileName").textContent = user?.displayName || "Guest Player";
-      $("profileMode").textContent = user ? "Google account" : "Guest";
+      const name = user?.displayName || "Guest Player";
+      $("profileName").textContent = name;
+      $("avatarInitial").textContent = name.charAt(0).toUpperCase();
+      $("profileMode").textContent = user ? "Cloud Synced via Google" : "Playing locally on this device";
       $("authLabel").textContent = user ? (user.displayName?.split(" ")[0] || "Account") : "Sign in";
       $("profileAuthBtn").textContent = user ? "Sign out" : "Sign in with Google";
-      $("firebaseStatus").textContent = user ? "Connected" : "Offline";
-      $("firebaseStatusText").textContent = user ? "Connected" : "Offline";
-      $("firebaseStatus").style.color = user ? "var(--good)" : "var(--muted)";
-      $("authDesc").textContent = user 
-        ? "Your account is linked and your progress is actively backing up to the cloud." 
-        : "Sign in to safely back up your streaks, compete on global leaderboards, and sync your BitsPlay progress across all your devices.";
-        
+      $("cloudStatusBadge").textContent = user ? "Connected ☁️" : "Offline (Guest)";
+      $("cloudStatusBadge").style.color = user ? "var(--good)" : "var(--text-muted)";
       calculateStats();
     }
 
@@ -397,59 +1249,25 @@
         const [
           { initializeApp },
           { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut },
-          { getFirestore, doc, onSnapshot },
-          { getAnalytics }
+          { getFirestore, doc, onSnapshot }
         ] = await Promise.all([
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
-          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"),
-          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js")
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
         ]);
-        
+
         const app = initializeApp(FIREBASE_CONFIG);
-        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
         firebase = { auth, db, provider, signInWithPopup, signOut, doc, onSnapshot };
 
-        onAuthStateChanged(auth, async (account) => {
+        onAuthStateChanged(auth, (account) => {
           user = account ? { uid: account.uid, displayName: account.displayName || "Player" } : null;
           renderProfile();
-
-          if (account && firebase.db) {
-             firebase.onSnapshot(firebase.doc(firebase.db, "users", account.uid), (docSnap) => {
-                if (docSnap.exists()) {
-                   const data = docSnap.data();
-                   
-                   // Pull ReWorded History
-                   if (data.reworded_results) {
-                      const rwState = JSON.parse(localStorage.getItem("daily_games_v1") || "{}");
-                      rwState.results = { ...(rwState.results || {}), ...data.reworded_results };
-                      localStorage.setItem("daily_games_v1", JSON.stringify(rwState));
-                   }
-
-                   // Pull Circuit History
-                   if (data.circuit_results) {
-                      const cirState = JSON.parse(localStorage.getItem("circuit_games_v1") || "{}");
-                      cirState.results = { ...(cirState.results || {}), ...data.circuit_results };
-                      localStorage.setItem("circuit_games_v1", JSON.stringify(cirState));
-                   }
-
-                   // Pull Gridrule History
-                   if (data.gridrule_results) {
-                      const grState = JSON.parse(localStorage.getItem("gridrule_games_v1") || "{}");
-                      grState.results = { ...(grState.results || {}), ...data.gridrule_results };
-                      localStorage.setItem("gridrule_games_v1", JSON.stringify(grState));
-                   }
-
-                   calculateStats();
-                }
-             });
-          }
         });
       } catch (error) {
-        console.warn("Firebase unavailable", error);
+        console.warn("Firebase offline or unavailable", error);
       }
     }
 
@@ -463,18 +1281,9 @@
       }
     }
 
-    // Event Listeners
-    document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
     $("authBtn").addEventListener("click", authAction);
     $("profileAuthBtn").addEventListener("click", authAction);
-    
-    $("themeBtn").addEventListener("click", () => {
-      document.body.classList.toggle("dark");
-      localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light");
-    });
 
-    // Boot
-    if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
     renderProfile();
     initFirebase();
   </script>
